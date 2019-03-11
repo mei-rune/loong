@@ -1,11 +1,13 @@
 package loong
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
 
 	"github.com/labstack/echo"
+	"github.com/runner-mei/loong/log"
 )
 
 func ErrBadArgument(paramName string, value interface{}, err error) error {
@@ -31,10 +33,15 @@ func WithHTTPCode(code int, err error) *HTTPError {
 
 type Context struct {
 	echo.Context
+	StdContext context.Context
+
+	CtxLogger log.Logger
 }
 
+var _ echo.Context = &Context{}
+
 // HandlerFunc defines a function to serve HTTP requests.
-type HandlerFunc func(Context) error
+type HandlerFunc func(*Context) error
 
 // MiddlewareFunc defines a function to process middleware.
 type MiddlewareFunc func(HandlerFunc) HandlerFunc
@@ -125,19 +132,19 @@ type Party interface {
 
 type Engine struct {
 	*echo.Echo
+
+	LogFactory log.Factory
 }
 
 func (e *Engine) convertHandler(h HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		return h(Context{
-			Context: ctx,
-		})
+		return h(ctx.(*Context))
 	}
 }
 
 func (e *Engine) convertFromHandler(h echo.HandlerFunc) HandlerFunc {
-	return func(ctx Context) error {
-		return h(ctx.Context)
+	return func(ctx *Context) error {
+		return h(ctx)
 	}
 }
 
@@ -345,4 +352,23 @@ func (g *Group) Static(prefix, root string) {
 func (g *Group) Group(prefix string, m ...MiddlewareFunc) Party {
 	sg := g.group.Group(prefix, g.engine.convertMiddlewares(m)...)
 	return &Group{g.engine, sg}
+}
+
+func New() *Engine {
+	e := &Engine{
+		Echo: echo.New(),
+	}
+	e.Echo.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			req := ctx.Request()
+			actx := &Context{
+				Context:    ctx,
+				StdContext: req.Context(),
+				CtxLogger:  e.LogFactory.With("http.method", req.Method, "http.url", req.URL).New(),
+			}
+			actx.StdContext = log.ContextWithLogger(actx.StdContext, actx.CtxLogger)
+			return next(actx)
+		}
+	})
+	return e
 }
