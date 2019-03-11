@@ -38,6 +38,10 @@ type Context struct {
 	CtxLogger log.Logger
 }
 
+func (c *Context) Return(code int, i interface{}) error {
+	return c.JSON(code, i)
+}
+
 var _ echo.Context = &Context{}
 
 // HandlerFunc defines a function to serve HTTP requests.
