@@ -101,7 +101,7 @@ func (r *Request) SetBody(body interface{}) *Request {
 	r.requestBody = body
 	return r
 }
-func (r *Request) Body(body interface{}) *Request {
+func (r *Request) Result(body interface{}) *Request {
 	r.requestBody = body
 	return r
 }
