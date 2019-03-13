@@ -38,8 +38,32 @@ type Context struct {
 	CtxLogger log.Logger
 }
 
-func (c *Context) Return(code int, i interface{}) error {
-	return c.JSON(code, i)
+type Result struct {
+	Success  bool        `json:"success"`
+	Data     interface{} `json:"data,omitempty"`
+	Error    string      `json:"error,omitempty"`
+	Messages []string    `json:"messages,omitempty"`
+}
+
+func (c *Context) ReturnResult(code int, i interface{}) error {
+	return c.JSON(code, &Result{Success: true, Data: i})
+}
+
+func (c *Context) ReturnError(err error, code ...int) error {
+	var httpCode int
+	if len(code) > 0 {
+		httpCode = code[0]
+	}
+	if httpCode == 0 {
+		if a, ok := err.(interface {
+			HTTPCode() int
+		}); ok {
+			httpCode = a.HTTPCode()
+		} else {
+			httpCode = http.StatusInternalServerError
+		}
+	}
+	return c.JSON(httpCode, &Result{Success: false, Error: err.Error()})
 }
 
 var _ echo.Context = &Context{}
