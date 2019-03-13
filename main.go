@@ -49,19 +49,19 @@ func (c *Context) ReturnResult(code int, i interface{}) error {
 	return c.JSON(code, &Result{Success: true, Data: i})
 }
 
-func (c *Context) ReturnCreatedResult(code int, i interface{}) error {
+func (c *Context) ReturnCreatedResult(i interface{}) error {
 	return c.JSON(http.StatusCreated, &Result{Success: true, Data: i})
 }
 
-func (c *Context) ReturnUpdatedResult(code int, i interface{}) error {
+func (c *Context) ReturnUpdatedResult(i interface{}) error {
 	return c.JSON(http.StatusOK, &Result{Success: true, Data: i})
 }
 
-func (c *Context) ReturnDeletedResult(code int, i interface{}) error {
+func (c *Context) ReturnDeletedResult(i interface{}) error {
 	return c.JSON(http.StatusOK, &Result{Success: true, Data: i})
 }
 
-func (c *Context) ReturnQueryResult(code int, i interface{}) error {
+func (c *Context) ReturnQueryResult(i interface{}) error {
 	return c.JSON(http.StatusOK, &Result{Success: true, Data: i})
 }
 
