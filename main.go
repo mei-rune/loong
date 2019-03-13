@@ -45,14 +45,6 @@ type Result struct {
 	Messages []string    `json:"messages,omitempty"`
 }
 
-func (c *Context) SetValue(key, value interface{}) {
-	c.StdContext = context.WithValue(c.StdContext, key, value)
-}
-
-func (c *Context) GetValue(key interface{}) interface{} {
-	return c.StdContext.Value(key)
-}
-
 func (c *Context) ReturnResult(code int, i interface{}) error {
 	return c.JSON(code, &Result{Success: true, Data: i})
 }
