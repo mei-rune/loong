@@ -10,7 +10,16 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 )
+
+var BufferPool sync.Pool
+
+func init() {
+	BufferPool.New = func() interface{} {
+		return bytes.NewBuffer(make([]byte, 0, 1024))
+	}
+}
 
 type HTTPError struct {
 	err      error
@@ -32,20 +41,22 @@ func WithHTTPCode(code int, err error) *HTTPError {
 type ResponseFunc func(req *http.Request, resp *http.Response) error
 
 type Proxy struct {
-	Client      *http.Client
-	u           url.URL
-	queryParams url.Values
-	headers     url.Values
+	Client        *http.Client
+	JSONUseNumber bool
+	u             url.URL
+	queryParams   url.Values
+	headers       url.Values
 }
 
 func (proxy *Proxy) Release(request *Request) {}
 
 func (proxy *Proxy) New(urlStr string) *Request {
 	r := &Request{
-		proxy:       proxy,
-		u:           proxy.u,
-		queryParams: url.Values{},
-		headers:     url.Values{},
+		proxy:         proxy,
+		jsonUseNumber: proxy.JSONUseNumber,
+		u:             proxy.u,
+		queryParams:   url.Values{},
+		headers:       url.Values{},
 	}
 
 	for key, values := range proxy.queryParams {
@@ -76,13 +87,19 @@ func (proxy *Proxy) New(urlStr string) *Request {
 }
 
 type Request struct {
-	proxy        *Proxy
-	u            url.URL
-	queryParams  url.Values
-	headers      url.Values
-	requestBody  interface{}
-	exceptedCode int
-	responseBody interface{}
+	proxy         *Proxy
+	jsonUseNumber bool
+	u             url.URL
+	queryParams   url.Values
+	headers       url.Values
+	requestBody   interface{}
+	exceptedCode  int
+	responseBody  interface{}
+}
+
+func (r *Request) JSONUseNumber() *Request {
+	r.jsonUseNumber = true
+	return r
 }
 
 func (r *Request) SetHeader(key, value string) *Request {
@@ -152,12 +169,16 @@ func (r *Request) invoke(ctx context.Context, method string) error {
 		case io.Reader:
 			body = value
 		default:
-			buffer := bytes.NewBuffer(make([]byte, 0, 1000))
+			buffer := BufferPool.Get().(*bytes.Buffer)
 			e := json.NewEncoder(buffer).Encode(body)
 			if nil != e {
 				return WithHTTPCode(http.StatusBadRequest, e)
 			}
 			body = buffer
+			defer func() {
+				buffer.Reset()
+				BufferPool.Put(buffer)
+			}()
 		}
 	}
 
@@ -240,13 +261,24 @@ func (r *Request) invoke(ctx context.Context, method string) error {
 		*response = buffer.Bytes()
 		return nil
 	default:
-		decoder := json.NewDecoder(resp.Body)
-		decoder.UseNumber()
-		e = decoder.Decode(response)
+		if r.jsonUseNumber {
+			decoder := json.NewDecoder(resp.Body)
+			decoder.UseNumber()
+			return decoder.Decode(response)
+		}
+
+		buffer := BufferPool.Get().(*bytes.Buffer)
+		_, e = io.Copy(buffer, resp.Body)
 		if nil != e {
+			buffer.Reset()
+			BufferPool.Put(buffer)
 			return e
 		}
-		return nil
+
+		e = json.Unmarshal(buffer.Bytes(), response)
+		buffer.Reset()
+		BufferPool.Put(buffer)
+		return e
 	}
 }
 
