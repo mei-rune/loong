@@ -11,7 +11,13 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+
+	"github.com/runner-mei/loong/util"
 )
+
+var ErrBadArgument = util.ErrBadArgument
+var WithHTTPCode = util.WithHTTPCode
+var Wrap = util.Wrap
 
 var BufferPool sync.Pool
 
@@ -21,22 +27,7 @@ func init() {
 	}
 }
 
-type HTTPError struct {
-	err      error
-	httpCode int
-}
-
-func (e *HTTPError) Error() string {
-	return e.err.Error()
-}
-
-func (e *HTTPError) HTTPCode() int {
-	return e.httpCode
-}
-
-func WithHTTPCode(code int, err error) *HTTPError {
-	return &HTTPError{err: err, httpCode: code}
-}
+type HTTPError = util.HTTPError
 
 type ResponseFunc func(req *http.Request, resp *http.Response) error
 
@@ -171,7 +162,7 @@ func (r *Request) invoke(ctx context.Context, method string) error {
 		default:
 			buffer := BufferPool.Get().(*bytes.Buffer)
 			e := json.NewEncoder(buffer).Encode(body)
-			if nil != e {
+			if e != nil {
 				return WithHTTPCode(http.StatusBadRequest, e)
 			}
 			body = buffer
@@ -197,7 +188,7 @@ func (r *Request) invoke(ctx context.Context, method string) error {
 	}
 
 	resp, e := r.proxy.Client.Do(req)
-	if nil != e {
+	if e != nil {
 		return WithHTTPCode(http.StatusServiceUnavailable, e)
 	}
 
@@ -211,21 +202,25 @@ func (r *Request) invoke(ctx context.Context, method string) error {
 	}
 
 	if !isOK {
-		var respBody []byte
+		var responseBody string
 
 		if nil != resp.Body {
-			respBody, e = ioutil.ReadAll(resp.Body)
+			respBody, e := ioutil.ReadAll(resp.Body)
 			resp.Body.Close()
 
-			if nil != e {
-				panic(e.Error())
+			if e != nil {
+				responseBody = string(respBody) + "\r\n*************** "
+				responseBody += e.Error()
+				responseBody += "***************"
+			} else {
+				responseBody = string(respBody)
 			}
 		}
 
-		if 0 == len(respBody) {
+		if len(responseBody) == 0 {
 			return WithHTTPCode(resp.StatusCode, errors.New("request '"+urlStr+"' fail: "+resp.Status+": read_error"))
 		}
-		return WithHTTPCode(resp.StatusCode, errors.New("request '"+urlStr+"' fail: "+resp.Status+": "+string(respBody)))
+		return WithHTTPCode(resp.StatusCode, errors.New("request '"+urlStr+"' fail: "+resp.Status+": "+responseBody))
 	}
 
 	// Install closing the request body (if any)
@@ -245,18 +240,18 @@ func (r *Request) invoke(ctx context.Context, method string) error {
 		return response(req, resp)
 	case io.Writer:
 		_, e = io.Copy(response, resp.Body)
-		return e
+		return WithHTTPCode(11, e)
 	case *string:
 		var sb strings.Builder
-		if _, e = io.Copy(&sb, resp.Body); nil != e {
-			return e
+		if _, e = io.Copy(&sb, resp.Body); e != nil {
+			return WithHTTPCode(11, Wrap(e, "request '"+method+"' is ok and read response fail"))
 		}
 		*response = sb.String()
 		return nil
 	case *[]byte:
 		buffer := bytes.NewBuffer(make([]byte, 0, 1024))
-		if _, e = io.Copy(buffer, resp.Body); nil != e {
-			return e
+		if _, e = io.Copy(buffer, resp.Body); e != nil {
+			return WithHTTPCode(11, Wrap(e, "request '"+method+"' is ok and read response fail"))
 		}
 		*response = buffer.Bytes()
 		return nil
@@ -264,21 +259,28 @@ func (r *Request) invoke(ctx context.Context, method string) error {
 		if r.jsonUseNumber {
 			decoder := json.NewDecoder(resp.Body)
 			decoder.UseNumber()
-			return decoder.Decode(response)
+			e = decoder.Decode(response)
+			if e != nil {
+				return WithHTTPCode(12, Wrap(e, "request '"+method+"' is ok and read response fail"))
+			}
+			return nil
 		}
 
 		buffer := BufferPool.Get().(*bytes.Buffer)
 		_, e = io.Copy(buffer, resp.Body)
-		if nil != e {
+		if e != nil {
 			buffer.Reset()
 			BufferPool.Put(buffer)
-			return e
+			return WithHTTPCode(11, Wrap(e, "request '"+method+"' is ok and read response fail"))
 		}
 
 		e = json.Unmarshal(buffer.Bytes(), response)
 		buffer.Reset()
 		BufferPool.Put(buffer)
-		return e
+		if e != nil {
+			return WithHTTPCode(12, Wrap(e, "request '"+method+"' is ok and read response fail"))
+		}
+		return nil
 	}
 }
 

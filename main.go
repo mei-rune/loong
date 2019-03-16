@@ -2,34 +2,19 @@ package loong
 
 import (
 	"context"
-	"errors"
 	"io"
 	"net/http"
 
 	"github.com/labstack/echo"
 	"github.com/runner-mei/loong/log"
+	"github.com/runner-mei/loong/util"
 )
 
-func ErrBadArgument(paramName string, value interface{}, err error) error {
-	return &HTTPError{httpCode: http.StatusBadRequest, err: errors.New("param '" + paramName + "' is invalid - " + err.Error())}
-}
+var ErrBadArgument = util.ErrBadArgument
+var WithHTTPCode = util.WithHTTPCode
+var Wrap = util.Wrap
 
-type HTTPError struct {
-	err      error
-	httpCode int
-}
-
-func (e *HTTPError) Error() string {
-	return e.err.Error()
-}
-
-func (e *HTTPError) HTTPCode() int {
-	return e.httpCode
-}
-
-func WithHTTPCode(code int, err error) *HTTPError {
-	return &HTTPError{err: err, httpCode: code}
-}
+type HTTPError = util.HTTPError
 
 type Context struct {
 	echo.Context
