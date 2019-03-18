@@ -31,12 +31,50 @@ type HTTPError = util.HTTPError
 
 type ResponseFunc func(req *http.Request, resp *http.Response) error
 
+func New(urlStr string) (*Proxy, error) {
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		return nil, err
+	}
+	var queryParams url.Values
+	for key, values := range u.Query() {
+		queryParams[key] = values
+	}
+	u.RawQuery = ""
+
+	return &Proxy{
+		u:           *u,
+		queryParams: queryParams,
+	}, nil
+}
+
 type Proxy struct {
 	Client        *http.Client
-	JSONUseNumber bool
+	jsonUseNumber bool
 	u             url.URL
 	queryParams   url.Values
 	headers       url.Values
+}
+
+func (px *Proxy) JSONUseNumber() *Proxy {
+	px.jsonUseNumber = true
+	return px
+}
+func (px *Proxy) SetHeader(key, value string) *Proxy {
+	px.headers.Set(key, value)
+	return px
+}
+func (px *Proxy) AddHeader(key, value string) *Proxy {
+	px.headers.Add(key, value)
+	return px
+}
+func (px *Proxy) SetParam(key, value string) *Proxy {
+	px.queryParams.Set(key, value)
+	return px
+}
+func (px *Proxy) AddParam(key, value string) *Proxy {
+	px.queryParams.Add(key, value)
+	return px
 }
 
 func (proxy *Proxy) Release(request *Request) {}
@@ -44,7 +82,7 @@ func (proxy *Proxy) Release(request *Request) {}
 func (proxy *Proxy) New(urlStr string) *Request {
 	r := &Request{
 		proxy:         proxy,
-		jsonUseNumber: proxy.JSONUseNumber,
+		jsonUseNumber: proxy.jsonUseNumber,
 		u:             proxy.u,
 		queryParams:   url.Values{},
 		headers:       url.Values{},
@@ -65,12 +103,12 @@ func (proxy *Proxy) New(urlStr string) *Request {
 
 		if u.Scheme != "" {
 			r.u = *u
-			r.queryParams = u.Query()
 		} else {
 			r.u.Path = Join(r.u.Path, u.Path)
-			for key, values := range u.Query() {
-				r.queryParams[key] = values
-			}
+		}
+
+		for key, values := range u.Query() {
+			r.queryParams[key] = values
 		}
 	}
 
@@ -92,9 +130,12 @@ func (r *Request) JSONUseNumber() *Request {
 	r.jsonUseNumber = true
 	return r
 }
-
 func (r *Request) SetHeader(key, value string) *Request {
 	r.headers.Set(key, value)
+	return r
+}
+func (r *Request) AddHeader(key, value string) *Request {
+	r.headers.Add(key, value)
 	return r
 }
 func (r *Request) SetParam(key, value string) *Request {
@@ -175,19 +216,22 @@ func (r *Request) invoke(ctx context.Context, method string) error {
 
 	r.u.RawQuery = r.queryParams.Encode()
 	urlStr := r.u.String()
-	req, e := http.NewRequest(method, urlStr, body)
+	req, e := http.NewRequest(method, "*", body)
 	if e != nil {
 		return WithHTTPCode(http.StatusBadRequest, e)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
 	}
-
 	for key, values := range r.headers {
 		req.Header[key] = values
 	}
 
-	resp, e := r.proxy.Client.Do(req)
+	client := r.proxy.Client
+	if client == nil {
+		client = http.DefaultClient
+	}
+	resp, e := client.Do(req)
 	if e != nil {
 		return WithHTTPCode(http.StatusServiceUnavailable, e)
 	}
