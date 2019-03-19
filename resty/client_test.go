@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -82,6 +83,35 @@ func assetBody(t *testing.T, req *Request, code int, excepted string) *Request {
 			}
 			return nil
 		}))
+}
+
+func TestGetFail(t *testing.T) {
+	failMessage := "FAIL message"
+	hsrv := httptest.NewServer(echoFunc(t, &TestData{
+		exceptedMethod:  "GET",
+		exceptedHeaders: url.Values{"Yaaa": []string{"abc"}},
+		exceptedURL:     "/test1/a",
+		exceptedBody:    "",
+		responseCode:    http.StatusInternalServerError,
+		responseBody:    failMessage,
+	}))
+	defer hsrv.Close()
+
+	urlStr := Join(hsrv.URL, "/test1")
+	prx, _ := New(urlStr)
+
+	err := assetBody(t, prx.New("/a"), 0, "OK").
+		SetHeader("Yaaa", "abc").
+		GET(nil)
+	if err == nil {
+		t.Error("err is nil")
+		return
+	}
+
+	if !strings.Contains(err.Error(), failMessage) {
+		t.Errorf("response excepted: %s", failMessage)
+		t.Errorf("response actual  : %s", err)
+	}
 }
 
 func TestGetOK(t *testing.T) {
