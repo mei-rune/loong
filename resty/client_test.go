@@ -1,6 +1,7 @@
 package resty
 
 import (
+	"bytes"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -420,6 +421,32 @@ func TestGetJson(t *testing.T) {
 	}
 	if body["a"] != "b" {
 		t.Errorf("body %s", body)
+	}
+}
+
+func TestGetWriter(t *testing.T) {
+	hsrv := httptest.NewServer(echoFunc(t, &TestData{
+		exceptedMethod:  "GET",
+		exceptedHeaders: url.Values{"Yaaa": []string{"abc"}},
+		exceptedURL:     "/test1/a",
+		responseCode:    http.StatusOK,
+		responseBody:    "ok",
+	}))
+	defer hsrv.Close()
+
+	urlStr := Join(hsrv.URL, "/test1")
+	prx, _ := New(urlStr)
+
+	var body bytes.Buffer
+	err := prx.New("/a").
+		Result(&body).
+		SetHeader("Yaaa", "abc").
+		GET(nil)
+	if err != nil {
+		t.Error(err)
+	}
+	if body.String() != "ok" {
+		t.Errorf("body %s", body.String())
 	}
 }
 

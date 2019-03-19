@@ -283,9 +283,6 @@ func (r *Request) invoke(ctx context.Context, method string) error {
 	switch response := r.responseBody.(type) {
 	case ResponseFunc:
 		return response(req, resp)
-	case io.Writer:
-		_, e = io.Copy(response, resp.Body)
-		return WithHTTPCode(11, e)
 	case *string:
 		var sb strings.Builder
 		if _, e = io.Copy(&sb, resp.Body); e != nil {
@@ -300,6 +297,12 @@ func (r *Request) invoke(ctx context.Context, method string) error {
 		}
 		*response = buffer.Bytes()
 		return nil
+	case io.Writer:
+		_, e = io.Copy(response, resp.Body)
+		if e == nil {
+			return nil
+		}
+		return WithHTTPCode(11, e)
 	default:
 		if r.jsonUseNumber {
 			decoder := json.NewDecoder(resp.Body)
