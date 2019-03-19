@@ -268,3 +268,127 @@ func TestAddParam(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestBytesBody(t *testing.T) {
+	hsrv := httptest.NewServer(echoFunc(t, &TestData{
+		exceptedMethod:  "POST",
+		exceptedHeaders: url.Values{"Yaaa": []string{"abc"}},
+		exceptedURL:     "/test1/a",
+		exceptedBody:    "test",
+		responseCode:    http.StatusOK,
+		responseBody:    "OK",
+	}))
+	defer hsrv.Close()
+
+	urlStr := Join(hsrv.URL, "/test1")
+	prx, _ := New(urlStr)
+
+	err := assetBody(t, prx.New("/a"), 0, "OK").
+		SetHeader("Yaaa", "abc").
+		SetBody([]byte("test")).
+		POST(nil)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestJsonBody(t *testing.T) {
+	hsrv := httptest.NewServer(echoFunc(t, &TestData{
+		exceptedMethod:  "POST",
+		exceptedHeaders: url.Values{"Yaaa": []string{"abc"}},
+		exceptedURL:     "/test1/a",
+		exceptedBody:    `{"a":"b"}` + "\n",
+		responseCode:    http.StatusOK,
+		responseBody:    "OK",
+	}))
+	defer hsrv.Close()
+
+	urlStr := Join(hsrv.URL, "/test1")
+	prx, _ := New(urlStr)
+
+	err := assetBody(t, prx.New("/a"), 0, "OK").
+		SetHeader("Yaaa", "abc").
+		SetBody(map[string]interface{}{"a": "b"}).
+		POST(nil)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGetBytes(t *testing.T) {
+	hsrv := httptest.NewServer(echoFunc(t, &TestData{
+		exceptedMethod:  "GET",
+		exceptedHeaders: url.Values{"Yaaa": []string{"abc"}},
+		exceptedURL:     "/test1/a",
+		responseCode:    http.StatusOK,
+		responseBody:    "OK",
+	}))
+	defer hsrv.Close()
+
+	urlStr := Join(hsrv.URL, "/test1")
+	prx, _ := New(urlStr)
+
+	var body []byte
+	err := prx.New("/a").
+		Result(&body).
+		SetHeader("Yaaa", "abc").
+		GET(nil)
+	if err != nil {
+		t.Error(err)
+	}
+	if string(body) != "OK" {
+		t.Errorf("body %s", body)
+	}
+}
+
+func TestGetString(t *testing.T) {
+	hsrv := httptest.NewServer(echoFunc(t, &TestData{
+		exceptedMethod:  "GET",
+		exceptedHeaders: url.Values{"Yaaa": []string{"abc"}},
+		exceptedURL:     "/test1/a",
+		responseCode:    http.StatusOK,
+		responseBody:    "OK",
+	}))
+	defer hsrv.Close()
+
+	urlStr := Join(hsrv.URL, "/test1")
+	prx, _ := New(urlStr)
+
+	var body string
+	err := prx.New("/a").
+		Result(&body).
+		SetHeader("Yaaa", "abc").
+		GET(nil)
+	if err != nil {
+		t.Error(err)
+	}
+	if body != "OK" {
+		t.Errorf("body %s", body)
+	}
+}
+
+func TestGetJson(t *testing.T) {
+	hsrv := httptest.NewServer(echoFunc(t, &TestData{
+		exceptedMethod:  "GET",
+		exceptedHeaders: url.Values{"Yaaa": []string{"abc"}},
+		exceptedURL:     "/test1/a",
+		responseCode:    http.StatusOK,
+		responseBody:    "{\"a\":\"b\"}",
+	}))
+	defer hsrv.Close()
+
+	urlStr := Join(hsrv.URL, "/test1")
+	prx, _ := New(urlStr)
+
+	var body map[string]string
+	err := prx.New("/a").
+		Result(&body).
+		SetHeader("Yaaa", "abc").
+		GET(nil)
+	if err != nil {
+		t.Error(err)
+	}
+	if body["a"] != "b" {
+		t.Errorf("body %s", body)
+	}
+}

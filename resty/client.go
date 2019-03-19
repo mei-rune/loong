@@ -202,7 +202,7 @@ func (r *Request) invoke(ctx context.Context, method string) error {
 			body = value
 		default:
 			buffer := BufferPool.Get().(*bytes.Buffer)
-			e := json.NewEncoder(buffer).Encode(body)
+			e := json.NewEncoder(buffer).Encode(r.requestBody)
 			if e != nil {
 				return WithHTTPCode(http.StatusBadRequest, e)
 			}
