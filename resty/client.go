@@ -36,7 +36,7 @@ func New(urlStr string) (*Proxy, error) {
 	if err != nil {
 		return nil, err
 	}
-	var queryParams url.Values
+	var queryParams = url.Values{}
 	for key, values := range u.Query() {
 		queryParams[key] = values
 	}
@@ -45,6 +45,7 @@ func New(urlStr string) (*Proxy, error) {
 	return &Proxy{
 		u:           *u,
 		queryParams: queryParams,
+		headers:     url.Values{},
 	}, nil
 }
 

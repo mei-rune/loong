@@ -392,3 +392,28 @@ func TestGetJson(t *testing.T) {
 		t.Errorf("body %s", body)
 	}
 }
+
+func TestProxyData(t *testing.T) {
+	hsrv := httptest.NewServer(echoFunc(t, &TestData{
+		exceptedMethod: "GET",
+		exceptedHeaders: url.Values{"Yaaa": []string{"abc"},
+			"Ybbb": []string{"abb"}},
+		exceptedURL:  "/test1/a?a=b&c=d",
+		exceptedBody: "",
+		responseCode: http.StatusOK,
+		responseBody: "OK",
+	}))
+	defer hsrv.Close()
+
+	urlStr := Join(hsrv.URL, "/test1?c=d")
+	prx, _ := New(urlStr)
+	prx.SetHeader("Ybbb", "abb")
+
+	err := assetBody(t, prx.New("/a"), 0, "OK").
+		SetHeader("Yaaa", "abc").
+		SetParam("a", "b").
+		GET(nil)
+	if err != nil {
+		t.Error(err)
+	}
+}
