@@ -151,7 +151,7 @@ func (r *Request) SetBody(body interface{}) *Request {
 	return r
 }
 func (r *Request) Result(body interface{}) *Request {
-	r.requestBody = body
+	r.responseBody = body
 	return r
 }
 func (r *Request) ExceptedCode(code int) *Request {
@@ -192,7 +192,7 @@ func (r *Request) invoke(ctx context.Context, method string) error {
 	var req *http.Request
 
 	var body io.Reader
-	if body != nil {
+	if r.requestBody != nil && method != "GET" {
 		switch value := r.requestBody.(type) {
 		case []byte:
 			body = bytes.NewReader(value)
@@ -216,7 +216,7 @@ func (r *Request) invoke(ctx context.Context, method string) error {
 
 	r.u.RawQuery = r.queryParams.Encode()
 	urlStr := r.u.String()
-	req, e := http.NewRequest(method, "*", body)
+	req, e := http.NewRequest(method, urlStr, body)
 	if e != nil {
 		return WithHTTPCode(http.StatusBadRequest, e)
 	}
@@ -275,7 +275,7 @@ func (r *Request) invoke(ctx context.Context, method string) error {
 		}
 	}()
 
-	if nil == r.responseBody {
+	if r.responseBody == nil {
 		return nil
 	}
 
