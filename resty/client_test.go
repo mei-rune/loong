@@ -174,3 +174,97 @@ func TestDeleteOK(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestSetHeader(t *testing.T) {
+	hsrv := httptest.NewServer(echoFunc(t, &TestData{
+		exceptedMethod:  "GET",
+		exceptedHeaders: url.Values{"Yaaa": []string{"abc"}},
+		exceptedURL:     "/test1/a",
+		exceptedBody:    "",
+		responseCode:    http.StatusOK,
+		responseBody:    "OK",
+	}))
+	defer hsrv.Close()
+
+	urlStr := Join(hsrv.URL, "/test1")
+	prx, _ := New(urlStr)
+
+	err := assetBody(t, prx.New("/a"), 0, "OK").
+		AddHeader("Yaaa", "1").
+		AddHeader("Yaaa", "1").
+		SetHeader("Yaaa", "abc").
+		GET(nil)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestAddHeader(t *testing.T) {
+	hsrv := httptest.NewServer(echoFunc(t, &TestData{
+		exceptedMethod:  "GET",
+		exceptedHeaders: url.Values{"Yaaa": []string{"abc", "1", "1"}},
+		exceptedURL:     "/test1/a",
+		exceptedBody:    "",
+		responseCode:    http.StatusOK,
+		responseBody:    "OK",
+	}))
+	defer hsrv.Close()
+
+	urlStr := Join(hsrv.URL, "/test1")
+	prx, _ := New(urlStr)
+
+	err := assetBody(t, prx.New("/a"), 0, "OK").
+		SetHeader("Yaaa", "abc").
+		AddHeader("Yaaa", "1").
+		AddHeader("Yaaa", "1").
+		GET(nil)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestSetParam(t *testing.T) {
+	hsrv := httptest.NewServer(echoFunc(t, &TestData{
+		exceptedMethod: "GET",
+		exceptedURL:    "/test1/a?Yaaa=abc",
+		exceptedBody:   "",
+		responseCode:   http.StatusOK,
+		responseBody:   "OK",
+	}))
+	defer hsrv.Close()
+
+	urlStr := Join(hsrv.URL, "/test1")
+	prx, _ := New(urlStr)
+
+	err := assetBody(t, prx.New("/a"), 0, "OK").
+		AddParam("Yaaa", "1").
+		AddParam("Yaaa", "1").
+		SetParam("Yaaa", "abc").
+		GET(nil)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestAddParam(t *testing.T) {
+	hsrv := httptest.NewServer(echoFunc(t, &TestData{
+		exceptedMethod: "GET",
+		exceptedURL:    "/test1/a?Yaaa=abc&Yaaa=1&Yaaa=1",
+		exceptedBody:   "",
+		responseCode:   http.StatusOK,
+		responseBody:   "OK",
+	}))
+	defer hsrv.Close()
+
+	urlStr := Join(hsrv.URL, "/test1")
+	prx, _ := New(urlStr)
+
+	err := assetBody(t, prx.New("/a"), 0, "OK").
+		SetParam("Yaaa", "abc").
+		AddParam("Yaaa", "1").
+		AddParam("Yaaa", "1").
+		GET(nil)
+	if err != nil {
+		t.Error(err)
+	}
+}
