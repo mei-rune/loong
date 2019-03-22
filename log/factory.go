@@ -19,6 +19,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // Factory is the default logging wrapper that can create
@@ -57,7 +58,7 @@ func (b Factory) For(ctx context.Context) Factory {
 // echo-ed into the span.
 func (b Factory) Span(span opentracing.Span) Factory {
 	if span != nil {
-		return Factory{logger: b.logger, targets: append(b.targets, OutputToTracer(zap.DebugLevel, span))}
+		return Factory{logger: b.logger, targets: append(b.targets, OutputToTracer(DefaultSpanLevel, span))}
 	}
 	return b
 }
@@ -101,4 +102,75 @@ func FactoryFromContext(ctx context.Context) *Factory {
 		return sp
 	}
 	return nil
+}
+
+func Span(logger Logger, span opentracing.Span, enabledLevel ...zapcore.Level) Logger {
+	if span == nil {
+		return logger
+	}
+
+	if len(enabledLevel) > 0 {
+		return logger.WithTargets(OutputToTracer(enabledLevel[0], span))
+	}
+
+	return logger.WithTargets(OutputToTracer(DefaultSpanLevel, span))
+}
+
+func SpanContext(logger Logger, spanContext opentracing.SpanContext, method string, enabledLevel ...zapcore.Level) Logger {
+	if spanContext == nil {
+		return logger
+	}
+
+	span := opentracing.StartSpan(method, opentracing.ChildOf(spanContext))
+	if len(enabledLevel) > 0 {
+		return logger.WithTargets(OutputToTracer(enabledLevel[0], span))
+	}
+	return logger.WithTargets(OutputToTracer(DefaultSpanLevel, span))
+}
+
+// For returns a context-aware Logger. If the context
+// contains an OpenTracing span, all logging calls are also
+// echo-ed into the span.
+func For(ctx context.Context, args ...interface{}) Logger {
+	var logger Logger
+	var span opentracing.Span
+	var spanContext opentracing.SpanContext
+	var method string
+	var level = DefaultSpanLevel
+
+	for _, arg := range args {
+		switch value := arg.(type) {
+		case Logger:
+			logger = value
+		case opentracing.Span:
+			span = value
+		case opentracing.SpanContext:
+			spanContext = value
+		case string:
+			method = value
+		case zapcore.Level:
+			level = value
+		}
+	}
+
+	if logger == nil {
+		logger = LoggerOrEmptyFromContext(ctx)
+	}
+
+	if span != nil {
+		return Span(logger, span, level)
+	}
+
+	if spanContext != nil {
+		return SpanContext(logger, spanContext, method, level)
+	}
+
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		return Span(logger, span, level)
+	}
+	return logger
+}
+
+func IsEmpty(logger Logger) bool {
+	return logger == Empty
 }
