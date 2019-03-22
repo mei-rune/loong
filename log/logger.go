@@ -18,17 +18,16 @@ import (
 	"context"
 
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // Logger is a simplified abstraction of the zap.Logger
 type Logger interface {
-	Panic(msg string, fields ...zapcore.Field)
-	Debug(msg string, fields ...zapcore.Field)
-	Info(msg string, fields ...zapcore.Field)
-	Error(msg string, fields ...zapcore.Field)
-	Warn(msg string, fields ...zapcore.Field)
-	Fatal(msg string, fields ...zapcore.Field)
+	Panic(msg string, fields ...Field)
+	Debug(msg string, fields ...Field)
+	Info(msg string, fields ...Field)
+	Error(msg string, fields ...Field)
+	Warn(msg string, fields ...Field)
+	Fatal(msg string, fields ...Field)
 
 	Debugw(msg string, fields ...interface{})
 	Infow(msg string, fields ...interface{})
@@ -54,32 +53,32 @@ type zaplogger struct {
 }
 
 // Panic logs an panic msg with fields and panic
-func (l zaplogger) Panic(msg string, fields ...zapcore.Field) {
+func (l zaplogger) Panic(msg string, fields ...Field) {
 	l.logger.Panic(msg, fields...)
 }
 
 // Debug logs an debug msg with fields
-func (l zaplogger) Debug(msg string, fields ...zapcore.Field) {
+func (l zaplogger) Debug(msg string, fields ...Field) {
 	l.logger.Debug(msg, fields...)
 }
 
 // Info logs an info msg with fields
-func (l zaplogger) Info(msg string, fields ...zapcore.Field) {
+func (l zaplogger) Info(msg string, fields ...Field) {
 	l.logger.Info(msg, fields...)
 }
 
 // Warn logs an error msg with fields
-func (l zaplogger) Warn(msg string, fields ...zapcore.Field) {
+func (l zaplogger) Warn(msg string, fields ...Field) {
 	l.logger.Warn(msg, fields...)
 }
 
 // Error logs an error msg with fields
-func (l zaplogger) Error(msg string, fields ...zapcore.Field) {
+func (l zaplogger) Error(msg string, fields ...Field) {
 	l.logger.Error(msg, fields...)
 }
 
 // Fatal logs a fatal error msg with fields
-func (l zaplogger) Fatal(msg string, fields ...zapcore.Field) {
+func (l zaplogger) Fatal(msg string, fields ...Field) {
 	l.logger.Fatal(msg, fields...)
 }
 
@@ -164,14 +163,14 @@ func NewLogger(logger *zap.Logger) Logger {
 // Logger is a simplified abstraction of the zap.Logger
 type emptyLogger struct{}
 
-func (empty emptyLogger) Panic(msg string, fields ...zapcore.Field) {
+func (empty emptyLogger) Panic(msg string, fields ...Field) {
 	panic(msg)
 }
-func (empty emptyLogger) Debug(msg string, fields ...zapcore.Field) {}
-func (empty emptyLogger) Info(msg string, fields ...zapcore.Field)  {}
-func (empty emptyLogger) Error(msg string, fields ...zapcore.Field) {}
-func (empty emptyLogger) Warn(msg string, fields ...zapcore.Field)  {}
-func (empty emptyLogger) Fatal(msg string, fields ...zapcore.Field) {}
+func (empty emptyLogger) Debug(msg string, fields ...Field) {}
+func (empty emptyLogger) Info(msg string, fields ...Field)  {}
+func (empty emptyLogger) Error(msg string, fields ...Field) {}
+func (empty emptyLogger) Warn(msg string, fields ...Field)  {}
+func (empty emptyLogger) Fatal(msg string, fields ...Field) {}
 
 func (empty emptyLogger) Debugw(msg string, fields ...interface{}) {}
 func (empty emptyLogger) Infow(msg string, fields ...interface{})  {}

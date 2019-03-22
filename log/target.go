@@ -8,15 +8,15 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-const DefaultSpanLevel = zapcore.DebugLevel
+const DefaultSpanLevel = DebugLevel
 
 type Target interface {
-	LogFields(level zapcore.Level, msg string, fields ...zapcore.Field)
+	LogFields(level Level, msg string, fields ...Field)
 }
 
 type Tee []Target
 
-func (sl Tee) LogFields(level zapcore.Level, msg string, fields ...zapcore.Field) {
+func (sl Tee) LogFields(level Level, msg string, fields ...Field) {
 	for idx := range sl {
 		sl[idx].LogFields(level, msg, fields...)
 	}
@@ -30,36 +30,36 @@ func ConcatTargets(target Target, targets ...Target) Target {
 	return Tee(append(targets, target))
 }
 
-type Callback func(level zapcore.Level, msg string, fields ...zapcore.Field)
+type Callback func(level Level, msg string, fields ...Field)
 
-func (callback Callback) LogFields(level zapcore.Level, msg string, fields ...zapcore.Field) {
+func (callback Callback) LogFields(level Level, msg string, fields ...Field) {
 	callback(level, msg, fields...)
 }
 
-func OutputToStrings(enabledLevel zapcore.Level, target *[]string) Callback {
-	return Callback(func(level zapcore.Level, msg string, fields ...zapcore.Field) {
+func OutputToStrings(enabledLevel Level, target *[]string) Callback {
+	return Callback(func(level Level, msg string, fields ...Field) {
 		if !enabledLevel.Enabled(level) {
 			return
 		}
 
 		switch level {
-		case zapcore.InfoLevel:
+		case InfoLevel:
 			msg = "信息：" + msg
-		case zapcore.WarnLevel:
+		case WarnLevel:
 			msg = "警告：" + msg
-		case zapcore.ErrorLevel:
+		case ErrorLevel:
 			msg = "错误：" + msg
-		case zapcore.DPanicLevel, zapcore.PanicLevel:
+		case DPanicLevel, PanicLevel:
 			msg = "异常：" + msg
-		case zapcore.FatalLevel:
+		case FatalLevel:
 			msg = "致命错误：" + msg
 		}
 		*target = append(*target, msg)
 	})
 }
 
-func OutputToTracer(enabledLevel zapcore.Level, span opentracing.Span) Callback {
-	return Callback(func(level zapcore.Level, msg string, fields ...zapcore.Field) {
+func OutputToTracer(enabledLevel Level, span opentracing.Span) Callback {
+	return Callback(func(level Level, msg string, fields ...Field) {
 		if !enabledLevel.Enabled(level) {
 			return
 		}

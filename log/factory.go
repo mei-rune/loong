@@ -19,7 +19,6 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // Factory is the default logging wrapper that can create
@@ -66,7 +65,7 @@ func (b Factory) Span(span opentracing.Span) Factory {
 // Span returns a span Logger, all logging calls are also
 // echo-ed into the span.
 func (b Factory) OutputToStrings(target *[]string) Factory {
-	return Factory{logger: b.logger, targets: append(b.targets, OutputToStrings(zap.InfoLevel, target))}
+	return Factory{logger: b.logger, targets: append(b.targets, OutputToStrings(InfoLevel, target))}
 }
 
 // With creates a child logger, and optionally adds some context fields to that logger.
@@ -104,7 +103,7 @@ func FactoryFromContext(ctx context.Context) *Factory {
 	return nil
 }
 
-func Span(logger Logger, span opentracing.Span, enabledLevel ...zapcore.Level) Logger {
+func Span(logger Logger, span opentracing.Span, enabledLevel ...Level) Logger {
 	if span == nil {
 		return logger
 	}
@@ -116,27 +115,32 @@ func Span(logger Logger, span opentracing.Span, enabledLevel ...zapcore.Level) L
 	return logger.WithTargets(OutputToTracer(DefaultSpanLevel, span))
 }
 
-func SpanContext(logger Logger, spanContext opentracing.SpanContext, method string, enabledLevel ...zapcore.Level) Logger {
+func SpanContext(logger Logger, spanContext opentracing.SpanContext, method string, enabledLevel ...Level) (Logger, func()) {
 	if spanContext == nil {
-		return logger
+		return logger, func() {}
 	}
 
 	span := opentracing.StartSpan(method, opentracing.ChildOf(spanContext))
-	if len(enabledLevel) > 0 {
-		return logger.WithTargets(OutputToTracer(enabledLevel[0], span))
+	finish := func() {
+		span.Finish()
 	}
-	return logger.WithTargets(OutputToTracer(DefaultSpanLevel, span))
+
+	if len(enabledLevel) > 0 {
+		return logger.WithTargets(OutputToTracer(enabledLevel[0], span)), finish
+	}
+	return logger.WithTargets(OutputToTracer(DefaultSpanLevel, span)), finish
 }
 
 // For returns a context-aware Logger. If the context
 // contains an OpenTracing span, all logging calls are also
 // echo-ed into the span.
-func For(ctx context.Context, args ...interface{}) Logger {
+func For(ctx context.Context, args ...interface{}) (Logger, func()) {
 	var logger Logger
 	var span opentracing.Span
 	var spanContext opentracing.SpanContext
 	var method string
 	var level = DefaultSpanLevel
+	var fields []interface{}
 
 	for _, arg := range args {
 		switch value := arg.(type) {
@@ -148,17 +152,22 @@ func For(ctx context.Context, args ...interface{}) Logger {
 			spanContext = value
 		case string:
 			method = value
-		case zapcore.Level:
+		case Level:
 			level = value
+		case Field:
+			fields = append(fields, value)
 		}
 	}
 
 	if logger == nil {
 		logger = LoggerOrEmptyFromContext(ctx)
 	}
+	if len(fields) > 0 {
+		logger = logger.With(fields...)
+	}
 
 	if span != nil {
-		return Span(logger, span, level)
+		return Span(logger, span, level), noop
 	}
 
 	if spanContext != nil {
@@ -166,10 +175,12 @@ func For(ctx context.Context, args ...interface{}) Logger {
 	}
 
 	if span := opentracing.SpanFromContext(ctx); span != nil {
-		return Span(logger, span, level)
+		return Span(logger, span, level), noop
 	}
-	return logger
+	return logger, noop
 }
+
+var noop = func() {}
 
 func IsEmpty(logger Logger) bool {
 	return logger == Empty

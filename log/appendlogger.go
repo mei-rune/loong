@@ -28,33 +28,33 @@ type appendLogger struct {
 }
 
 // Panic logs an panic msg with fields and panic
-func (l appendLogger) Panic(msg string, fields ...zapcore.Field) {
-	l.target.LogFields(zap.PanicLevel, msg, fields...)
+func (l appendLogger) Panic(msg string, fields ...Field) {
+	l.target.LogFields(PanicLevel, msg, fields...)
 	l.logger.Panic(msg, fields...)
 }
 
-func (l appendLogger) Debug(msg string, fields ...zapcore.Field) {
-	l.target.LogFields(zap.DebugLevel, msg, fields...)
+func (l appendLogger) Debug(msg string, fields ...Field) {
+	l.target.LogFields(DebugLevel, msg, fields...)
 	l.logger.Debug(msg, fields...)
 }
 
-func (l appendLogger) Info(msg string, fields ...zapcore.Field) {
-	l.target.LogFields(zap.InfoLevel, msg, fields...)
+func (l appendLogger) Info(msg string, fields ...Field) {
+	l.target.LogFields(InfoLevel, msg, fields...)
 	l.logger.Info(msg, fields...)
 }
 
-func (l appendLogger) Warn(msg string, fields ...zapcore.Field) {
-	l.target.LogFields(zap.WarnLevel, msg, fields...)
+func (l appendLogger) Warn(msg string, fields ...Field) {
+	l.target.LogFields(WarnLevel, msg, fields...)
 	l.logger.Warn(msg, fields...)
 }
 
-func (l appendLogger) Error(msg string, fields ...zapcore.Field) {
-	l.target.LogFields(zap.ErrorLevel, msg, fields...)
+func (l appendLogger) Error(msg string, fields ...Field) {
+	l.target.LogFields(ErrorLevel, msg, fields...)
 	l.logger.Error(msg, fields...)
 }
 
-func (l appendLogger) Fatal(msg string, fields ...zapcore.Field) {
-	l.target.LogFields(zap.FatalLevel, msg, fields...)
+func (l appendLogger) Fatal(msg string, fields ...Field) {
+	l.target.LogFields(FatalLevel, msg, fields...)
 	l.logger.Fatal(msg, fields...)
 }
 
@@ -114,7 +114,7 @@ func (l appendLogger) Fatalf(msg string, values ...interface{}) {
 }
 
 // // With creates a child logger, and optionally adds some context fields to that logger.
-// func (l appendLogger) With(fields ...zapcore.Field) Logger {
+// func (l appendLogger) With(fields ...Field) Logger {
 // 	return appendLogger{logger: l.logger.With(fields...), target: l.target}
 // }
 
@@ -140,19 +140,19 @@ const (
 	_nonStringKeyErrMsg = "Ignored key-value pairs with non-string keys."
 )
 
-func sweetenFields(base Logger, args []interface{}) []zapcore.Field {
+func sweetenFields(base Logger, args []interface{}) []Field {
 	if len(args) == 0 {
 		return nil
 	}
 
 	// Allocate enough space for the worst case; if users pass only structured
 	// fields, we shouldn't penalize them with extra allocations.
-	fields := make([]zapcore.Field, 0, len(args))
+	fields := make([]Field, 0, len(args))
 	var invalid invalidPairs
 
 	for i := 0; i < len(args); {
 		// This is a strongly-typed field. Consume it and move on.
-		if f, ok := args[i].(zapcore.Field); ok {
+		if f, ok := args[i].(Field); ok {
 			fields = append(fields, f)
 			i++
 			continue
