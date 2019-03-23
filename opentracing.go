@@ -17,7 +17,7 @@ func Tracing(comp string) MiddlewareFunc {
 				opentracing.TextMap,
 				opentracing.HTTPHeadersCarrier(c.Request().Header))
 			if err != nil {
-				if isDebug := c.QueryParam("opentracing"); isDebug != "true" && isDebug != "1" {
+				if isDebug := c.QueryParam("opentracing"); isDebug != "true" {
 					return next(c)
 				}
 
@@ -32,8 +32,10 @@ func Tracing(comp string) MiddlewareFunc {
 			ext.HTTPUrl.Set(span, c.Request().Host+c.Request().RequestURI)
 			ext.HTTPMethod.Set(span, c.Request().Method)
 
-			c.CtxLogger = c.CtxLogger.WithTargets(log.OutputToTracer(log.DefaultSpanLevel, span))
-			c.StdContext = log.ContextWithLogger(c.StdContext, c.CtxLogger)
+			if c.CtxLogger != nil {
+				c.CtxLogger = c.CtxLogger.WithTargets(log.OutputToTracer(log.DefaultSpanLevel, span))
+				c.StdContext = log.ContextWithLogger(c.StdContext, c.CtxLogger)
+			}
 
 			err = next(c)
 			if err != nil {

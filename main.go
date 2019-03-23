@@ -6,14 +6,18 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"github.com/runner-mei/loong/log"
 	"github.com/runner-mei/loong/util"
 )
+
+const MyContextKey = "my-context-key"
 
 var ErrBadArgument = util.ErrBadArgument
 var WithHTTPCode = util.WithHTTPCode
 var Wrap = util.Wrap
 
+type Error = util.Error
 type HTTPError = util.HTTPError
 
 type Context struct {
@@ -21,32 +25,55 @@ type Context struct {
 	StdContext context.Context
 
 	CtxLogger log.Logger
+	LogArray  []string
 }
 
 type Result struct {
 	Success  bool        `json:"success"`
 	Data     interface{} `json:"data,omitempty"`
-	Error    string      `json:"error,omitempty"`
+	Error    *Error      `json:"error,omitempty"`
 	Messages []string    `json:"messages,omitempty"`
 }
 
-func (c *Context) ReturnResult(code int, i interface{}) error {
+func (c *Context) ReturnResult(code int, i interface{}, notWrapped ...bool) error {
+	if len(notWrapped) > 0 && notWrapped[0] {
+		return c.JSON(code, i)
+	}
 	return c.JSON(code, &Result{Success: true, Data: i})
 }
 
-func (c *Context) ReturnCreatedResult(i interface{}) error {
+func (c *Context) ReturnCreatedResult(i interface{}, notWrapped ...bool) error {
+	if len(notWrapped) > 0 && notWrapped[0] {
+		return c.JSON(http.StatusCreated, i)
+	}
 	return c.JSON(http.StatusCreated, &Result{Success: true, Data: i})
 }
 
-func (c *Context) ReturnUpdatedResult(i interface{}) error {
+func (c *Context) ReturnUpdatedResult(i interface{}, notWrapped ...bool) error {
+	if len(notWrapped) > 0 && notWrapped[0] {
+		return c.JSON(http.StatusOK, i)
+	}
 	return c.JSON(http.StatusOK, &Result{Success: true, Data: i})
 }
 
-func (c *Context) ReturnDeletedResult(i interface{}) error {
+func (c *Context) ReturnDeletedResult(i interface{}, notWrapped ...bool) error {
+	if len(notWrapped) > 0 && notWrapped[0] {
+		return c.JSON(http.StatusOK, i)
+	}
 	return c.JSON(http.StatusOK, &Result{Success: true, Data: i})
 }
 
-func (c *Context) ReturnQueryResult(i interface{}) error {
+func (c *Context) ReturnQueryResult(i interface{}, notWrapped ...bool) error {
+	if len(notWrapped) > 0 && notWrapped[0] {
+		return c.JSON(http.StatusOK, i)
+	}
+	return c.JSON(http.StatusOK, &Result{Success: true, Data: i})
+}
+
+func (c *Context) ReturnCountResult(i int64, notWrapped ...bool) error {
+	if len(notWrapped) > 0 && notWrapped[0] {
+		return c.JSON(http.StatusOK, i)
+	}
 	return c.JSON(http.StatusOK, &Result{Success: true, Data: i})
 }
 
@@ -64,7 +91,7 @@ func (c *Context) ReturnError(err error, code ...int) error {
 			httpCode = http.StatusInternalServerError
 		}
 	}
-	return c.JSON(httpCode, &Result{Success: false, Error: err.Error()})
+	return c.JSON(httpCode, &Result{Success: false, Messages: c.LogArray, Error: util.ToError(err, httpCode)})
 }
 
 var _ echo.Context = &Context{}
@@ -162,12 +189,16 @@ type Party interface {
 type Engine struct {
 	*echo.Echo
 
-	LogFactory log.Factory
+	Logger log.Logger
 }
 
 func (e *Engine) convertHandler(h HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		return h(ctx.(*Context))
+		if actx, ok := ctx.(*Context); ok {
+			return h(actx)
+		}
+
+		return h(ctx.Get(MyContextKey).(*Context))
 	}
 }
 
@@ -177,9 +208,21 @@ func (e *Engine) convertFromHandler(h echo.HandlerFunc) HandlerFunc {
 	}
 }
 
+func (e *Engine) convertFromPreHandler(h echo.HandlerFunc) HandlerFunc {
+	return func(ctx *Context) error {
+		return h(ctx.Context)
+	}
+}
+
 func (e *Engine) convertMiddleware(middleware MiddlewareFunc) echo.MiddlewareFunc {
 	return func(h echo.HandlerFunc) echo.HandlerFunc {
 		return e.convertHandler(middleware(e.convertFromHandler(h)))
+	}
+}
+
+func (e *Engine) convertPreMiddleware(middleware MiddlewareFunc) echo.MiddlewareFunc {
+	return func(h echo.HandlerFunc) echo.HandlerFunc {
+		return e.convertHandler(middleware(e.convertFromPreHandler(h)))
 	}
 }
 
@@ -191,9 +234,17 @@ func (e *Engine) convertMiddlewares(middlewares []MiddlewareFunc) []echo.Middlew
 	return funcs
 }
 
+func (e *Engine) convertPreMiddlewares(middlewares []MiddlewareFunc) []echo.MiddlewareFunc {
+	funcs := make([]echo.MiddlewareFunc, len(middlewares))
+	for idx := range middlewares {
+		funcs[idx] = e.convertPreMiddleware(middlewares[idx])
+	}
+	return funcs
+}
+
 // Pre adds middleware to the chain which is run before router.
 func (e *Engine) Pre(middlewares ...MiddlewareFunc) {
-	e.Echo.Pre(e.convertMiddlewares(middlewares)...)
+	e.Echo.Pre(e.convertPreMiddlewares(middlewares)...)
 }
 
 // Use adds middleware to the chain which is run after router.
@@ -393,11 +444,19 @@ func New() *Engine {
 			actx := &Context{
 				Context:    ctx,
 				StdContext: req.Context(),
-				CtxLogger:  e.LogFactory.With("http.method", req.Method, "http.url", req.URL).New(),
 			}
-			actx.StdContext = log.ContextWithLogger(actx.StdContext, actx.CtxLogger)
-			return next(actx)
+			if e.Logger != nil {
+				actx.CtxLogger = e.Logger.With(log.String("http.method", req.Method), log.Stringer("http.url", req.URL))
+				actx.StdContext = log.ContextWithLogger(actx.StdContext, actx.CtxLogger)
+			}
+			ctx.Set(MyContextKey, actx)
+			return next(ctx)
 		}
 	})
+	e.Pre(Tracing("w"))
+
+	// Middleware
+	e.Echo.Use(middleware.Logger())
+	e.Echo.Use(middleware.Recover())
 	return e
 }

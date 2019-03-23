@@ -41,7 +41,7 @@ type Logger interface {
 	Warnf(msg string, values ...interface{})
 	Fatalf(msg string, values ...interface{})
 
-	With(keyAndValues ...interface{}) Logger
+	With(fields ...Field) Logger
 	WithTargets(targets ...Target) Logger
 	Named(name string) Logger
 }
@@ -133,8 +133,8 @@ func (l zaplogger) Fatalf(msg string, args ...interface{}) {
 }
 
 // With creates a child logger, and optionally adds some context fields to that logger.
-func (l zaplogger) With(keyAndValues ...interface{}) Logger {
-	newL := l.logger.With(sweetenFields(l, keyAndValues)...)
+func (l zaplogger) With(fields ...Field) Logger {
+	newL := l.logger.With(fields...)
 	return zaplogger{logger: newL, sugared: newL.Sugar()}
 }
 
@@ -184,8 +184,8 @@ func (empty emptyLogger) Errorf(msg string, values ...interface{}) {}
 func (empty emptyLogger) Warnf(msg string, values ...interface{})  {}
 func (empty emptyLogger) Fatalf(msg string, values ...interface{}) {}
 
-func (empty emptyLogger) With(keyAndValues ...interface{}) Logger { return empty }
-func (empty emptyLogger) Named(name string) Logger                { return empty }
+func (empty emptyLogger) With(fields ...Field) Logger { return empty }
+func (empty emptyLogger) Named(name string) Logger    { return empty }
 func (empty emptyLogger) WithTargets(targets ...Target) Logger {
 	if len(targets) > 0 {
 		return empty

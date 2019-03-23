@@ -73,6 +73,15 @@ var (
 	// Error adds an error with the key "error" to a Span.LogFields() record
 	Error = zap.Error
 
+	// NamedError constructs a field that lazily stores err.Error() under the
+	// provided key. Errors which also implement fmt.Formatter (like those produced
+	// by github.com/pkg/errors) will also have their verbose representation stored
+	// under key+"Verbose". If passed a nil error, the field is a no-op.
+	//
+	// For the common case in which the key is simply "error", the Error function
+	// is shorter and less repetitive.
+	NamedError = zap.NamedError
+
 	// Object adds an object-valued key:value pair to a Span.LogFields() record
 	Object = zap.Object
 
@@ -81,4 +90,22 @@ var (
 
 	// Any adds an any-valued key:value pair to a Span.LogFields() record
 	Any = zap.Any
+
+	// Stringer constructs a field with the given key and the output of the value's
+	// String method. The Stringer's String method is called lazily.
+	Stringer = zap.Stringer
+
+	// Time constructs a Field with the given key and value. The encoder
+	// controls how the time is serialized.
+	Time = zap.Time
+
+	// Stack constructs a field that stores a stacktrace of the current goroutine
+	// under provided key. Keep in mind that taking a stacktrace is eager and
+	// expensive (relatively speaking); this function both makes an allocation and
+	// takes about two microseconds.
+	Stack = zap.Stack
+
+	// Duration constructs a field with the given key and value. The encoder
+	// controls how the duration is serialized.
+	Duration = zap.Duration
 )

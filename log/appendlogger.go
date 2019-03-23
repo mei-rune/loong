@@ -119,8 +119,8 @@ func (l appendLogger) Fatalf(msg string, values ...interface{}) {
 // }
 
 // With creates a child logger, and optionally adds some context fields to that logger.
-func (l appendLogger) With(keyAndValues ...interface{}) Logger {
-	return appendLogger{logger: l.logger.With(keyAndValues...), target: l.target}
+func (l appendLogger) With(fields ...Field) Logger {
+	return appendLogger{logger: l.logger.With(fields...), target: l.target}
 }
 
 // With creates a child logger, and optionally adds some context fields to that logger.

@@ -13,3 +13,15 @@ func ContextWithUser(ctx context.Context, u interface{}) context.Context {
 func UserFromContext(ctx context.Context) interface{} {
 	return ctx.Value(UserKey)
 }
+
+type tokenKey struct{}
+
+var TokenKey = &tokenKey{}
+
+func ContextWithToken(ctx context.Context, u interface{}) context.Context {
+	return context.WithValue(ctx, TokenKey, u)
+}
+
+func TokenFromContext(ctx context.Context) interface{} {
+	return ctx.Value(TokenKey)
+}
