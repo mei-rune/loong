@@ -149,6 +149,10 @@ func (ja *JWTAuth) Decode(tokenString string) (*jwt.Token, error) {
 	return ja.parser.ParseWithClaims(tokenString, &jwt.StandardClaims{}, ja.keyFunc)
 }
 
+func (ja *JWTAuth) Signer() jwt.SigningMethod {
+	return ja.signer
+}
+
 func (ja *JWTAuth) keyFunc(t *jwt.Token) (interface{}, error) {
 	if ja.verifyKey != nil {
 		return ja.verifyKey, nil

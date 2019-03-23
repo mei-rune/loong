@@ -454,9 +454,23 @@ func New() *Engine {
 		}
 	})
 	e.Pre(Tracing("w"))
+	e.Echo.Pre(middleware.MethodOverrideWithConfig(middleware.MethodOverrideConfig{
+		Getter: func(c echo.Context) string {
+			m := c.FormValue("_method")
+			if m != "" {
+				return m
+			}
+			return c.QueryParam("_method")
+		}}))
 
 	// Middleware
 	e.Echo.Use(middleware.Logger())
 	e.Echo.Use(middleware.Recover())
+	e.Echo.HTTPErrorHandler = echo.HTTPErrorHandler(func(err error, c echo.Context) {
+		if e.Logger != nil {
+			e.Logger.Warn("处理请求发生错误", log.Error(err), log.String("url", c.Request().RequestURI))
+		}
+		e.Echo.DefaultHTTPErrorHandler(err, c)
+	})
 	return e
 }
