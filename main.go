@@ -13,6 +13,7 @@ import (
 
 const MyContextKey = "my-context-key"
 
+var ErrNotFound = echo.ErrNotFound
 var ErrBadArgument = util.ErrBadArgument
 var WithHTTPCode = util.WithHTTPCode
 var Wrap = util.Wrap
