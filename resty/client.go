@@ -11,10 +11,12 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/runner-mei/loong/util"
 )
 
+var TimeFormat = time.RFC3339
 var ErrBadArgument = util.ErrBadArgument
 var WithHTTPCode = util.WithHTTPCode
 var Wrap = util.Wrap
@@ -43,6 +45,8 @@ func New(urlStr string) (*Proxy, error) {
 	u.RawQuery = ""
 
 	return &Proxy{
+		Client:      http.DefaultClient,
+		TimeFormat:  TimeFormat,
 		u:           *u,
 		queryParams: queryParams,
 		headers:     url.Values{},
@@ -51,6 +55,7 @@ func New(urlStr string) (*Proxy, error) {
 
 type Proxy struct {
 	Client        *http.Client
+	TimeFormat    string
 	jsonUseNumber bool
 	u             url.URL
 	queryParams   url.Values

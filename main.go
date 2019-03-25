@@ -28,6 +28,10 @@ type Context struct {
 	LogArray  []string
 }
 
+func (c *Context) QueryParamArray(name string) []string {
+	return c.QueryParams()[name]
+}
+
 type Result struct {
 	Success  bool        `json:"success"`
 	Data     interface{} `json:"data,omitempty"`
