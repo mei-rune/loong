@@ -44,6 +44,7 @@ type Logger interface {
 	With(fields ...Field) Logger
 	WithTargets(targets ...Target) Logger
 	Named(name string) Logger
+	Unwrap() *zap.Logger
 }
 
 // zaplogger delegates all calls to the underlying zap.Logger
@@ -155,6 +156,10 @@ func (l zaplogger) Named(name string) Logger {
 	return zaplogger{logger: newL, sugared: newL.Sugar()}
 }
 
+func (l zaplogger) Unwrap() *zap.Logger {
+	return l.logger
+}
+
 func NewLogger(logger *zap.Logger) Logger {
 	logger = logger.WithOptions(zap.AddCallerSkip(1))
 	return zaplogger{logger: logger, sugared: logger.Sugar()}
@@ -192,6 +197,7 @@ func (empty emptyLogger) WithTargets(targets ...Target) Logger {
 	}
 	return appendLogger{logger: empty, target: Tee(targets)}
 }
+func (empty emptyLogger) Unwrap() *zap.Logger { return nil }
 
 // Empty a nil logger
 var Empty Logger = emptyLogger{}

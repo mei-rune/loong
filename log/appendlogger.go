@@ -135,6 +135,10 @@ func (l appendLogger) Named(name string) Logger {
 	return appendLogger{logger: l.logger.Named(name), target: l.target}
 }
 
+func (l appendLogger) Unwrap() *zap.Logger {
+	return l.logger.Unwrap()
+}
+
 const (
 	_oddNumberErrMsg    = "Ignored key without a value."
 	_nonStringKeyErrMsg = "Ignored key-value pairs with non-string keys."
