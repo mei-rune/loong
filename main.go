@@ -142,6 +142,56 @@ const (
 	MIMEOctetStream                      = echo.MIMEOctetStream
 )
 
+// Headers
+const (
+	HeaderAccept              = echo.HeaderAccept
+	HeaderAcceptEncoding      = echo.HeaderAcceptEncoding
+	HeaderAllow               = echo.HeaderAllow
+	HeaderAuthorization       = echo.HeaderAuthorization
+	HeaderContentDisposition  = echo.HeaderContentDisposition
+	HeaderContentEncoding     = echo.HeaderContentEncoding
+	HeaderContentLength       = echo.HeaderContentLength
+	HeaderContentType         = echo.HeaderContentType
+	HeaderCookie              = echo.HeaderCookie
+	HeaderSetCookie           = echo.HeaderSetCookie
+	HeaderIfModifiedSince     = echo.HeaderIfModifiedSince
+	HeaderLastModified        = echo.HeaderLastModified
+	HeaderLocation            = echo.HeaderLocation
+	HeaderUpgrade             = echo.HeaderUpgrade
+	HeaderVary                = echo.HeaderVary
+	HeaderWWWAuthenticate     = echo.HeaderWWWAuthenticate
+	HeaderXForwardedFor       = echo.HeaderXForwardedFor
+	HeaderXForwardedProto     = echo.HeaderXForwardedProto
+	HeaderXForwardedProtocol  = echo.HeaderXForwardedProtocol
+	HeaderXForwardedSsl       = echo.HeaderXForwardedSsl
+	HeaderXUrlScheme          = echo.HeaderXUrlScheme
+	HeaderXHTTPMethodOverride = echo.HeaderXHTTPMethodOverride
+	HeaderXRealIP             = echo.HeaderXRealIP
+	HeaderXRequestID          = echo.HeaderXRequestID
+	HeaderXRequestedWith      = echo.HeaderXRequestedWith
+	HeaderServer              = echo.HeaderServer
+	HeaderOrigin              = echo.HeaderOrigin
+
+	// Access control
+	HeaderAccessControlRequestMethod    = echo.HeaderAccessControlRequestMethod
+	HeaderAccessControlRequestHeaders   = echo.HeaderAccessControlRequestHeaders
+	HeaderAccessControlAllowOrigin      = echo.HeaderAccessControlAllowOrigin
+	HeaderAccessControlAllowMethods     = echo.HeaderAccessControlAllowMethods
+	HeaderAccessControlAllowHeaders     = echo.HeaderAccessControlAllowHeaders
+	HeaderAccessControlAllowCredentials = echo.HeaderAccessControlAllowCredentials
+	HeaderAccessControlExposeHeaders    = echo.HeaderAccessControlExposeHeaders
+	HeaderAccessControlMaxAge           = echo.HeaderAccessControlMaxAge
+
+	// Security
+	HeaderStrictTransportSecurity         = echo.HeaderStrictTransportSecurity
+	HeaderXContentTypeOptions             = echo.HeaderXContentTypeOptions
+	HeaderXXSSProtection                  = echo.HeaderXXSSProtection
+	HeaderXFrameOptions                   = echo.HeaderXFrameOptions
+	HeaderContentSecurityPolicy           = echo.HeaderContentSecurityPolicy
+	HeaderContentSecurityPolicyReportOnly = echo.HeaderContentSecurityPolicyReportOnly
+	HeaderXCSRFToken                      = echo.HeaderXCSRFToken
+)
+
 type Party interface {
 	Use(middleware ...MiddlewareFunc)
 
@@ -473,9 +523,13 @@ func New() *Engine {
 	e.Echo.Use(middleware.Recover())
 	e.Echo.HTTPErrorHandler = echo.HTTPErrorHandler(func(err error, c echo.Context) {
 		if e.Logger != nil {
-			e.Logger.Warn("处理请求发生错误", log.Error(err), log.String("url", c.Request().RequestURI))
+			e.Logger.Warn("处理请求发生错误", log.Error(err), log.String("method", c.Request().Method), log.String("url", c.Request().RequestURI))
 		}
 		e.Echo.DefaultHTTPErrorHandler(err, c)
+	})
+
+	e.Echo.GET("/internal/doc", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, Result{Success: true, Data: e.Echo.Routes()})
 	})
 	return e
 }
