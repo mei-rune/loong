@@ -16,6 +16,35 @@ import (
 	"github.com/runner-mei/loong/util"
 )
 
+const (
+	charsetUTF8 = "charset=UTF-8"
+	// PROPFIND Method can be used on collection and property resources.
+	PROPFIND = "PROPFIND"
+)
+
+// MIME types
+const (
+	MIMEApplicationJSON                  = "application/json"
+	MIMEApplicationJSONCharsetUTF8       = MIMEApplicationJSON + "; " + charsetUTF8
+	MIMEApplicationJavaScript            = "application/javascript"
+	MIMEApplicationJavaScriptCharsetUTF8 = MIMEApplicationJavaScript + "; " + charsetUTF8
+	MIMEApplicationXML                   = "application/xml"
+	MIMEApplicationXMLCharsetUTF8        = MIMEApplicationXML + "; " + charsetUTF8
+	MIMETextXML                          = "text/xml"
+	MIMETextXMLCharsetUTF8               = MIMETextXML + "; " + charsetUTF8
+	MIMEApplicationForm                  = "application/x-www-form-urlencoded"
+	MIMEApplicationProtobuf              = "application/protobuf"
+	MIMEApplicationMsgpack               = "application/msgpack"
+	MIMETextHTML                         = "text/html"
+	MIMETextHTMLCharsetUTF8              = MIMETextHTML + "; " + charsetUTF8
+	MIMETextPlain                        = "text/plain"
+	MIMETextPlainCharsetUTF8             = MIMETextPlain + "; " + charsetUTF8
+	MIMEMultipartForm                    = "multipart/form-data"
+	MIMEOctetStream                      = "application/octet-stream"
+
+	HeaderContentType = "Content-Type"
+)
+
 var TimeFormat = time.RFC3339
 var ErrBadArgument = util.ErrBadArgument
 var WithHTTPCode = util.WithHTTPCode
@@ -80,6 +109,10 @@ func (px *Proxy) SetParam(key, value string) *Proxy {
 }
 func (px *Proxy) AddParam(key, value string) *Proxy {
 	px.queryParams.Add(key, value)
+	return px
+}
+func (px *Proxy) SetContentType(contentType string) *Proxy {
+	px.headers.Set(HeaderContentType, contentType)
 	return px
 }
 
@@ -344,6 +377,17 @@ func Join(paths ...string) string {
 		return ""
 	case 1:
 		return paths[0]
+	case 2:
+		lastSplash := strings.HasSuffix(paths[0], "/")
+		if lastSplash {
+			if strings.HasPrefix(paths[1], "/") {
+				return paths[0] + paths[1][1:]
+			}
+			return paths[0] + paths[1]
+		} else if strings.HasPrefix(paths[1], "/") {
+			return paths[0] + paths[1]
+		}
+		return paths[0] + "/" + paths[1]
 	default:
 		return JoinWith(paths[0], paths[1:])
 	}
@@ -351,7 +395,7 @@ func Join(paths ...string) string {
 
 // JoinWith 拼接 url
 func JoinWith(base string, paths []string) string {
-	var buf bytes.Buffer
+	var buf strings.Builder
 	buf.WriteString(base)
 
 	lastSplash := strings.HasSuffix(base, "/")

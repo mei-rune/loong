@@ -25,7 +25,7 @@ func (e *Error) HTTPCode() int {
 }
 
 func ErrBadArgument(paramName string, value interface{}, err ...error) error {
-	if len(err) > 0 {
+	if len(err) == 0 {
 		return &Error{Code: http.StatusBadRequest, Message: "param '" + paramName + "' is invalid"}
 	}
 	return &Error{Code: http.StatusBadRequest, Message: "param '" + paramName + "' is invalid - " + err[0].Error()}
