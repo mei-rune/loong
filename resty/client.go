@@ -91,6 +91,37 @@ type Proxy struct {
 	headers       url.Values
 }
 
+func (px *Proxy) Clone() *Proxy {
+	queryParams := url.Values{}
+	for key, value := range px.queryParams {
+		queryParams[key] = value
+	}
+
+	headers := url.Values{}
+	for key, value := range px.headers {
+		headers[key] = value
+	}
+
+	return &Proxy{
+		Client:      px.Client,
+		TimeFormat:  px.TimeFormat,
+		u:           px.u,
+		queryParams: queryParams,
+		headers:     headers,
+	}
+}
+func (px *Proxy) JoinURL(urlStr string) *Proxy {
+	copyed := px.Clone()
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		panic(err)
+	}
+	for key, value := range u.Query() {
+		copyed.queryParams[key] = value
+	}
+	copyed.u.Path = Join(px.u.Path, u.Path)
+	return copyed
+}
 func (px *Proxy) JSONUseNumber() *Proxy {
 	px.jsonUseNumber = true
 	return px

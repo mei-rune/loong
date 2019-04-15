@@ -493,6 +493,16 @@ func New() *Engine {
 	e := &Engine{
 		Echo: echo.New(),
 	}
+	// e.Echo.Pre(middleware.AddTrailingSlash())
+	e.Echo.Pre(middleware.MethodOverrideWithConfig(middleware.MethodOverrideConfig{
+		Getter: func(c echo.Context) string {
+			m := c.FormValue("_method")
+			if m != "" {
+				return m
+			}
+			return c.QueryParam("_method")
+		}}))
+
 	e.Echo.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			req := ctx.Request()
@@ -509,27 +519,24 @@ func New() *Engine {
 		}
 	})
 	e.Pre(Tracing("w"))
-	e.Echo.Pre(middleware.MethodOverrideWithConfig(middleware.MethodOverrideConfig{
-		Getter: func(c echo.Context) string {
-			m := c.FormValue("_method")
-			if m != "" {
-				return m
-			}
-			return c.QueryParam("_method")
-		}}))
-
 	// Middleware
 	e.Echo.Use(middleware.Logger())
 	e.Echo.Use(middleware.Recover())
 	e.Echo.HTTPErrorHandler = echo.HTTPErrorHandler(func(err error, c echo.Context) {
 		if e.Logger != nil {
-			e.Logger.Warn("处理请求发生错误", log.Error(err), log.String("method", c.Request().Method), log.String("url", c.Request().RequestURI))
+			e.Logger.Warn("处理请求发生错误",
+				log.String("method", c.Request().Method),
+				log.String("url", c.Request().RequestURI),
+				log.Error(err))
 		}
 		e.Echo.DefaultHTTPErrorHandler(err, c)
 	})
 
-	e.Echo.GET("/internal/doc", func(c echo.Context) error {
+	docHandler := func(c echo.Context) error {
 		return c.JSON(http.StatusOK, Result{Success: true, Data: e.Echo.Routes()})
-	})
+	}
+	e.Echo.Group("/internal").GET("/doc", docHandler)
+	e.Echo.Group("/internal").GET("/doc/", docHandler)
+
 	return e
 }
