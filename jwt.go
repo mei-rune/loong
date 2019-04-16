@@ -1,19 +1,71 @@
 package loong
 
 import (
-	"encoding/json"
-	"errors"
+	"context"
 	"net/http"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
 )
 
-var (
-	ErrUnauthorized = errors.New("jwtauth: token is unauthorized")
-	ErrExpired      = errors.New("jwtauth: token is expired")
-	ErrNoTokenFound = errors.New("jwtauth: no token found")
-)
+// JWTVerifier http middleware handler will verify a JWT string from a http request.
+//
+// JWTVerifier will search for a JWT token in a http request, in the order:
+//   1. 'jwt' URI query parameter
+//   2. 'Authorization: BEARER T' request header
+//   3. Cookie 'jwt' value
+//
+// The first JWT string that is found as a query parameter, authorization header
+// or cookie header is then decoded by the `jwt-go` library and a *jwt.Token
+// object is set on the request context. In the case of a signature decoding error
+// the Verifier will also set the error on the request context.
+//
+// The Verifier always calls the next http handler in sequence, which can either
+// be the generic `jwtauth.Authenticator` middleware or your own custom handler
+// which checks the request context jwt token and error to prepare a custom
+// http response.
+func JWTVerify(ja *JWTAuth, findTokenFns ...func(r *http.Request) string) AuthValidateFunc {
+	return func(ctx context.Context, req *http.Request) (context.Context, error) {
+		var tokenStr string
+
+		// Extract token string from the request by calling token find functions in
+		// the order they where provided. Further extraction stops if a function
+		// returns a non-empty string.
+		for _, fn := range findTokenFns {
+			tokenStr = fn(req)
+			if tokenStr != "" {
+				break
+			}
+		}
+		if tokenStr == "" {
+			return nil, ErrTokenNotFound
+		}
+
+		// Verify the token
+		token, err := ja.Decode(tokenStr)
+		if err != nil {
+			switch err.Error() {
+			case "token is expired":
+				err = ErrTokenExpired
+			}
+			return nil, err
+		}
+
+		if token == nil || !token.Valid || token.Method != ja.signer {
+			return nil, ErrUnauthorized
+		}
+
+		if token.Claims == nil {
+			return nil, ErrUnauthorized
+		}
+
+		if err = token.Claims.Valid(); err != nil {
+			return nil, err
+		}
+
+		return ContextWithToken(ctx, token), nil
+	}
+}
 
 type JWTAuth struct {
 	signKey   interface{}
@@ -41,99 +93,6 @@ func NewJWTAuthWithParser(alg string, parser *jwt.Parser, signKey interface{}, v
 		verifyKey: verifyKey,
 		signer:    jwt.GetSigningMethod(alg),
 		parser:    parser,
-	}
-}
-
-// JWTVerifier http middleware handler will verify a JWT string from a http request.
-//
-// JWTVerifier will search for a JWT token in a http request, in the order:
-//   1. 'jwt' URI query parameter
-//   2. 'Authorization: BEARER T' request header
-//   3. Cookie 'jwt' value
-//
-// The first JWT string that is found as a query parameter, authorization header
-// or cookie header is then decoded by the `jwt-go` library and a *jwt.Token
-// object is set on the request context. In the case of a signature decoding error
-// the Verifier will also set the error on the request context.
-//
-// The Verifier always calls the next http handler in sequence, which can either
-// be the generic `jwtauth.Authenticator` middleware or your own custom handler
-// which checks the request context jwt token and error to prepare a custom
-// http response.
-func JWTVerifier(ja *JWTAuth, ssoAuth func(r *http.Request) bool) func(HandlerFunc) HandlerFunc {
-	if ssoAuth == nil {
-		ssoAuth = func(r *http.Request) bool {
-			return false
-		}
-	}
-	return func(next HandlerFunc) HandlerFunc {
-		return JWTVerify(ja, ssoAuth, JWTTokenFromQuery, JWTTokenFromHeader)(next)
-	}
-}
-
-func renderError(w http.ResponseWriter, errText string, statusCode int) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"code":  statusCode,
-		"error": errText,
-	})
-}
-
-func JWTVerify(ja *JWTAuth, ssoAuth func(r *http.Request) bool, findTokenFns ...func(r *http.Request) string) func(HandlerFunc) HandlerFunc {
-	return func(next HandlerFunc) HandlerFunc {
-		hfn := func(ctx *Context) error {
-			var tokenStr string
-
-			// Extract token string from the request by calling token find functions in
-			// the order they where provided. Further extraction stops if a function
-			// returns a non-empty string.
-			for _, fn := range findTokenFns {
-				tokenStr = fn(ctx.Request())
-				if tokenStr != "" {
-					break
-				}
-			}
-			if tokenStr == "" {
-				if ssoAuth(ctx.Request()) {
-					// SSO is authenticated, pass it through
-					return next(ctx)
-				}
-				return ctx.ReturnError(ErrNoTokenFound, http.StatusUnauthorized)
-			}
-
-			// Verify the token
-			token, err := ja.Decode(tokenStr)
-			if err != nil {
-				switch err.Error() {
-				case "token is expired":
-					err = ErrExpired
-				}
-				return ctx.ReturnError(err, http.StatusUnauthorized)
-			}
-
-			if token == nil || !token.Valid || token.Method != ja.signer {
-				return ctx.ReturnError(ErrUnauthorized, http.StatusUnauthorized)
-			}
-
-			if token.Claims == nil {
-				return ctx.ReturnError(ErrUnauthorized, http.StatusUnauthorized)
-			}
-
-			if err = token.Claims.Valid(); err != nil {
-				return ctx.ReturnError(err, http.StatusUnauthorized)
-			}
-
-			if token == nil || !token.Valid {
-				return ctx.ReturnError(ErrUnauthorized, http.StatusUnauthorized)
-			}
-
-			ctx.StdContext = ContextWithToken(ctx.StdContext, token)
-
-			// Token is authenticated, pass it through
-			return next(ctx)
-		}
-		return HandlerFunc(hfn)
 	}
 }
 
@@ -186,15 +145,4 @@ func JWTTokenFromHeader(r *http.Request) string {
 func JWTTokenFromQuery(r *http.Request) string {
 	// Get token from query param named "token".
 	return r.URL.Query().Get("token")
-}
-
-// contextKey is a value for use with context.WithValue. It's used as
-// a pointer so it fits in an interface{} without allocation. This technique
-// for defining context keys was copied from Go 1.7's new use of context in net/http.
-type contextKey struct {
-	name string
-}
-
-func (k *contextKey) String() string {
-	return "jwtauth context value " + k.name
 }

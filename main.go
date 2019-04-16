@@ -535,8 +535,8 @@ func New() *Engine {
 	docHandler := func(c echo.Context) error {
 		return c.JSON(http.StatusOK, Result{Success: true, Data: e.Echo.Routes()})
 	}
-	e.Echo.Group("/internal").GET("/doc", docHandler)
-	e.Echo.Group("/internal").GET("/doc/", docHandler)
-
+	doc := e.Echo.Group("/internal").Group("/doc")
+	doc.GET("/", docHandler)
+	doc.GET("", docHandler)
 	return e
 }
