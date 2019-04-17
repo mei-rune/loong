@@ -540,3 +540,10 @@ func New() *Engine {
 	doc.GET("", docHandler)
 	return e
 }
+
+func WrapHandler(handler http.Handler) HandlerFunc {
+	return func(c *Context) error {
+		handler.ServeHTTP(c.Response(), c.Request())
+		return nil
+	}
+}
