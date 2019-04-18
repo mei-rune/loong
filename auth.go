@@ -38,9 +38,9 @@ func HTTPAuth(validateFns ...AuthValidateFunc) func(HandlerFunc) HandlerFunc {
 	}
 }
 
-func RawHTTPAuth(returnError func(http.ResponseWriter, string, int), validateFns ...AuthValidateFunc) func(http.Handler) http.HandlerFunc {
+func RawHTTPAuth(returnError func(http.ResponseWriter, *http.Request, string, int), validateFns ...AuthValidateFunc) func(http.Handler) http.HandlerFunc {
 	if returnError == nil {
-		returnError = func(w http.ResponseWriter, err string, statusCode int) {
+		returnError = func(w http.ResponseWriter, r *http.Request, err string, statusCode int) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(statusCode)
 			json.NewEncoder(w).Encode(map[string]interface{}{
@@ -60,11 +60,11 @@ func RawHTTPAuth(returnError func(http.ResponseWriter, string, int), validateFns
 				}
 
 				if err != ErrTokenNotFound {
-					returnError(w, err.Error(), http.StatusUnauthorized)
+					returnError(w, r, err.Error(), http.StatusUnauthorized)
 					return
 				}
 			}
-			returnError(w, ErrTokenNotFound.Error(), http.StatusUnauthorized)
+			returnError(w, r, ErrTokenNotFound.Error(), http.StatusUnauthorized)
 		}
 		return http.HandlerFunc(hfn)
 	}
