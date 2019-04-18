@@ -25,3 +25,15 @@ func ContextWithToken(ctx context.Context, u interface{}) context.Context {
 func TokenFromContext(ctx context.Context) interface{} {
 	return ctx.Value(TokenKey)
 }
+
+type sessionKey struct{}
+
+var SessionKey = &sessionKey{}
+
+func ContextWithSession(ctx context.Context, s interface{}) context.Context {
+	return context.WithValue(ctx, SessionKey, s)
+}
+
+func SessionFromContext(ctx context.Context) interface{} {
+	return ctx.Value(SessionKey)
+}
