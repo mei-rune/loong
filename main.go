@@ -547,3 +547,12 @@ func WrapHandler(handler http.Handler) HandlerFunc {
 		return nil
 	}
 }
+
+type ContextHandlerFunc func(context.Context, http.ResponseWriter, *http.Request)
+
+func WrapContextHandler(handler ContextHandlerFunc) HandlerFunc {
+	return func(c *Context) error {
+		handler(c.StdContext, c.Response(), c.Request())
+		return nil
+	}
+}

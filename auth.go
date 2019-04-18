@@ -38,7 +38,7 @@ func HTTPAuth(validateFns ...AuthValidateFunc) func(HandlerFunc) HandlerFunc {
 	}
 }
 
-func RawHTTPAuth(returnError func(http.ResponseWriter, *http.Request, string, int), validateFns ...AuthValidateFunc) func(http.Handler) http.HandlerFunc {
+func RawHTTPAuth(returnError func(http.ResponseWriter, *http.Request, string, int), validateFns ...AuthValidateFunc) func(ContextHandlerFunc) ContextHandlerFunc {
 	if returnError == nil {
 		returnError = func(w http.ResponseWriter, r *http.Request, err string, statusCode int) {
 			w.Header().Set("Content-Type", "application/json")
@@ -50,12 +50,12 @@ func RawHTTPAuth(returnError func(http.ResponseWriter, *http.Request, string, in
 		}
 	}
 
-	return func(next http.Handler) http.HandlerFunc {
-		hfn := func(w http.ResponseWriter, r *http.Request) {
+	return func(next ContextHandlerFunc) ContextHandlerFunc {
+		hfn := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 			for _, fn := range validateFns {
-				_, err := fn(context.Background(), r)
+				nctx, err := fn(ctx, r)
 				if err == nil {
-					next.ServeHTTP(w, r)
+					next(nctx, w, r)
 					return
 				}
 
@@ -66,6 +66,6 @@ func RawHTTPAuth(returnError func(http.ResponseWriter, *http.Request, string, in
 			}
 			returnError(w, r, ErrTokenNotFound.Error(), http.StatusUnauthorized)
 		}
-		return http.HandlerFunc(hfn)
+		return ContextHandlerFunc(hfn)
 	}
 }
