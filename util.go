@@ -3,6 +3,8 @@ package loong
 import (
 	"errors"
 	"time"
+
+	"github.com/runner-mei/loong/util"
 )
 
 var (
@@ -22,4 +24,19 @@ func ToDatetime(s string) (time.Time, error) {
 	}
 
 	return time.Time{}, errors.New("'" + s + "' isnot datetime")
+}
+
+type Result struct {
+	Success  bool        `json:"success"`
+	Data     interface{} `json:"data,omitempty"`
+	Error    *Error      `json:"error,omitempty"`
+	Messages []string    `json:"messages,omitempty"`
+}
+
+func WrapErrorResult(c *Context, httpCode int, err error) interface{} {
+	return &Result{Success: false, Messages: c.LogArray, Error: util.ToError(err, httpCode)}
+}
+
+func WrapResult(c *Context, httpCode int, i interface{}) interface{} {
+	return &Result{Success: true, Data: i}
 }

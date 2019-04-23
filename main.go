@@ -25,61 +25,41 @@ type Context struct {
 	echo.Context
 	StdContext context.Context
 
-	CtxLogger log.Logger
-	LogArray  []string
+	CtxLogger       log.Logger
+	WrapResult      func(c *Context, code int, i interface{}) interface{}
+	WrapErrorResult func(c *Context, code int, err error) interface{}
+	LogArray        []string
 }
 
 func (c *Context) QueryParamArray(name string) []string {
 	return c.QueryParams()[name]
 }
 
-type Result struct {
-	Success  bool        `json:"success"`
-	Data     interface{} `json:"data,omitempty"`
-	Error    *Error      `json:"error,omitempty"`
-	Messages []string    `json:"messages,omitempty"`
+func (c *Context) ReturnResult(code int, i interface{}) error {
+	if c.WrapResult != nil {
+		i = c.WrapResult(c, code, i)
+	}
+	return c.JSON(code, i)
 }
 
-func (c *Context) ReturnResult(code int, i interface{}, notWrapped ...bool) error {
-	if len(notWrapped) > 0 && notWrapped[0] {
-		return c.JSON(code, i)
-	}
-	return c.JSON(code, &Result{Success: true, Data: i})
+func (c *Context) ReturnCreatedResult(i interface{}) error {
+	return c.ReturnResult(http.StatusCreated, i)
 }
 
-func (c *Context) ReturnCreatedResult(i interface{}, notWrapped ...bool) error {
-	if len(notWrapped) > 0 && notWrapped[0] {
-		return c.JSON(http.StatusCreated, i)
-	}
-	return c.JSON(http.StatusCreated, &Result{Success: true, Data: i})
+func (c *Context) ReturnUpdatedResult(i interface{}) error {
+	return c.ReturnResult(http.StatusOK, i)
 }
 
-func (c *Context) ReturnUpdatedResult(i interface{}, notWrapped ...bool) error {
-	if len(notWrapped) > 0 && notWrapped[0] {
-		return c.JSON(http.StatusOK, i)
-	}
-	return c.JSON(http.StatusOK, &Result{Success: true, Data: i})
+func (c *Context) ReturnDeletedResult(i interface{}) error {
+	return c.ReturnResult(http.StatusOK, i)
 }
 
-func (c *Context) ReturnDeletedResult(i interface{}, notWrapped ...bool) error {
-	if len(notWrapped) > 0 && notWrapped[0] {
-		return c.JSON(http.StatusOK, i)
-	}
-	return c.JSON(http.StatusOK, &Result{Success: true, Data: i})
+func (c *Context) ReturnQueryResult(i interface{}) error {
+	return c.ReturnResult(http.StatusOK, i)
 }
 
-func (c *Context) ReturnQueryResult(i interface{}, notWrapped ...bool) error {
-	if len(notWrapped) > 0 && notWrapped[0] {
-		return c.JSON(http.StatusOK, i)
-	}
-	return c.JSON(http.StatusOK, &Result{Success: true, Data: i})
-}
-
-func (c *Context) ReturnCountResult(i int64, notWrapped ...bool) error {
-	if len(notWrapped) > 0 && notWrapped[0] {
-		return c.JSON(http.StatusOK, i)
-	}
-	return c.JSON(http.StatusOK, &Result{Success: true, Data: i})
+func (c *Context) ReturnCountResult(i int64) error {
+	return c.ReturnResult(http.StatusOK, i)
 }
 
 func (c *Context) ReturnError(err error, code ...int) error {
@@ -96,7 +76,12 @@ func (c *Context) ReturnError(err error, code ...int) error {
 			httpCode = http.StatusInternalServerError
 		}
 	}
-	return c.JSON(httpCode, &Result{Success: false, Messages: c.LogArray, Error: util.ToError(err, httpCode)})
+
+	if c.WrapErrorResult != nil {
+		return c.JSON(httpCode, c.WrapErrorResult(c, httpCode, err))
+	}
+
+	return c.JSON(httpCode, util.ToError(err, httpCode))
 }
 
 var _ echo.Context = &Context{}
@@ -244,7 +229,9 @@ type Party interface {
 type Engine struct {
 	*echo.Echo
 
-	Logger log.Logger
+	Logger          log.Logger
+	WrapResult      func(c *Context, code int, i interface{}) interface{}
+	WrapErrorResult func(c *Context, code int, err error) interface{}
 }
 
 func (e *Engine) convertHandler(h HandlerFunc) echo.HandlerFunc {
@@ -507,8 +494,10 @@ func New() *Engine {
 		return func(ctx echo.Context) error {
 			req := ctx.Request()
 			actx := &Context{
-				Context:    ctx,
-				StdContext: req.Context(),
+				Context:         ctx,
+				StdContext:      req.Context(),
+				WrapResult:      e.WrapResult,
+				WrapErrorResult: e.WrapErrorResult,
 			}
 			if e.Logger != nil {
 				actx.CtxLogger = e.Logger.With(log.String("http.method", req.Method), log.Stringer("http.url", req.URL))
