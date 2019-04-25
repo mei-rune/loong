@@ -45,6 +45,9 @@ func (e *httpError) HTTPCode() int {
 }
 
 func WithHTTPCode(code int, err error) HTTPError {
+	if err == nil {
+		panic(errors.New("err is nil"))
+	}
 	return &httpError{err: err, httpCode: code}
 }
 
