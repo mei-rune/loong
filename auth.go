@@ -29,7 +29,7 @@ func HTTPAuth(validateFns ...AuthValidateFunc) func(HandlerFunc) HandlerFunc {
 				}
 
 				if err != ErrTokenNotFound {
-					return err
+					return ctx.ReturnError(err, http.StatusUnauthorized)
 				}
 			}
 			return ctx.ReturnError(ErrTokenNotFound, http.StatusUnauthorized)
