@@ -8,23 +8,16 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-// JWTVerifier http middleware handler will verify a JWT string from a http request.
+type TokenFindFunc func(r *http.Request) string
+type TokenCheckFunc func(ctx context.Context, req *http.Request, tokenStr string) (context.Context, error)
+
+// TokenVerify http middleware handler will verify a Token string from a http request.
 //
-// JWTVerifier will search for a JWT token in a http request, in the order:
-//   1. 'jwt' URI query parameter
+// TokenVerify will search for a token in a http request, in the order:
+//   1. 'token' URI query parameter
 //   2. 'Authorization: BEARER T' request header
-//   3. Cookie 'jwt' value
-//
-// The first JWT string that is found as a query parameter, authorization header
-// or cookie header is then decoded by the `jwt-go` library and a *jwt.Token
-// object is set on the request context. In the case of a signature decoding error
-// the Verifier will also set the error on the request context.
-//
-// The Verifier always calls the next http handler in sequence, which can either
-// be the generic `jwtauth.Authenticator` middleware or your own custom handler
-// which checks the request context jwt token and error to prepare a custom
-// http response.
-func JWTVerify(ja *JWTAuth, findTokenFns ...func(r *http.Request) string) AuthValidateFunc {
+//   3. Cookie 'token' value
+func TokenVerify(findTokenFns []TokenFindFunc, checkTokenFns []TokenCheckFunc) AuthValidateFunc {
 	return func(ctx context.Context, req *http.Request) (context.Context, error) {
 		var tokenStr string
 
@@ -41,6 +34,19 @@ func JWTVerify(ja *JWTAuth, findTokenFns ...func(r *http.Request) string) AuthVa
 			return nil, ErrTokenNotFound
 		}
 
+		for _, fn := range checkTokenFns {
+			c, err := fn(ctx, req, tokenStr)
+			if err == nil || err != ErrSkipped {
+				return c, err
+			}
+		}
+
+		return nil, ErrUnauthorized
+	}
+}
+
+func JWTCheck(ja *JWTAuth) TokenCheckFunc {
+	return func(ctx context.Context, req *http.Request, tokenStr string) (context.Context, error) {
 		// Verify the token
 		token, err := ja.Decode(tokenStr)
 		if err != nil {
@@ -119,19 +125,19 @@ func (ja *JWTAuth) keyFunc(t *jwt.Token) (interface{}, error) {
 	return ja.signKey, nil
 }
 
-// JWTTokenFromCookie tries to retreive the token string from a cookie named
-// "jwt".
-func JWTTokenFromCookie(r *http.Request) string {
-	cookie, err := r.Cookie("jwt")
+// TokenFromCookie tries to retreive the token string from a cookie named
+// "token".
+func TokenFromCookie(r *http.Request) string {
+	cookie, err := r.Cookie("token")
 	if err != nil {
 		return ""
 	}
 	return cookie.Value
 }
 
-// JWTTokenFromHeader tries to retreive the token string from the
+// TokenFromHeader tries to retreive the token string from the
 // "Authorization" reqeust header: "Authorization: BEARER T".
-func JWTTokenFromHeader(r *http.Request) string {
+func TokenFromHeader(r *http.Request) string {
 	// Get token from authorization header.
 	bearer := r.Header.Get("Authorization")
 	if len(bearer) > 7 && strings.ToUpper(bearer[0:6]) == "BEARER" {
@@ -140,9 +146,9 @@ func JWTTokenFromHeader(r *http.Request) string {
 	return ""
 }
 
-// JWTTokenFromQuery tries to retreive the token string from the "token" URI
+// TokenFromQuery tries to retreive the token string from the "token" URI
 // query parameter.
-func JWTTokenFromQuery(r *http.Request) string {
+func TokenFromQuery(r *http.Request) string {
 	// Get token from query param named "token".
 	return r.URL.Query().Get("token")
 }

@@ -14,6 +14,7 @@ var (
 	ErrTokenNotFound      = &util.Error{Code: http.StatusUnauthorized, Message: "auth: no token found"}
 	ErrUserNotFound       = &util.Error{Code: http.StatusForbidden, Message: "auth: user isnot exists"}
 	ErrInvalidCredentials = &util.Error{Code: http.StatusForbidden, Message: "auth: invalid credentials"}
+	ErrSkipped            = &util.Error{Code: http.StatusForbidden, Message: "auth: has not check token"}
 )
 
 type AuthValidateFunc func(ctx context.Context, req *http.Request) (context.Context, error)
