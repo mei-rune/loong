@@ -3,7 +3,7 @@ package loong
 import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/runner-mei/loong/log"
+	"github.com/runner-mei/log"
 )
 
 func Tracing(comp string) MiddlewareFunc {

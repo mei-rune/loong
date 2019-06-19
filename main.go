@@ -7,19 +7,19 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-	"github.com/runner-mei/loong/log"
-	"github.com/runner-mei/loong/util"
+	"github.com/runner-mei/errors"
+	"github.com/runner-mei/log"
 )
 
 const MyContextKey = "my-context-key"
 
 var ErrNotFound = echo.ErrNotFound
-var ErrBadArgument = util.ErrBadArgument
-var WithHTTPCode = util.WithHTTPCode
-var Wrap = util.Wrap
+var ErrBadArgument = errors.ErrBadArgument
+var WithHTTPCode = errors.WithHTTPCode
+var Wrap = errors.Wrap
 
-type Error = util.Error
-type HTTPError = util.HTTPError
+type Error = errors.Error
+type HTTPError = errors.HTTPError
 
 type Context struct {
 	echo.Context
@@ -81,7 +81,7 @@ func (c *Context) ReturnError(err error, code ...int) error {
 		return c.JSON(httpCode, c.WrapErrorResult(c, httpCode, err))
 	}
 
-	return c.JSON(httpCode, util.ToError(err, httpCode))
+	return c.JSON(httpCode, errors.ToError(err, httpCode))
 }
 
 var _ echo.Context = &Context{}

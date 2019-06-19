@@ -1,10 +1,9 @@
 package loong
 
 import (
-	"errors"
 	"time"
 
-	"github.com/runner-mei/loong/util"
+	"github.com/runner-mei/errors"
 )
 
 var (
@@ -34,7 +33,7 @@ type Result struct {
 }
 
 func WrapErrorResult(c *Context, httpCode int, err error) interface{} {
-	return &Result{Success: false, Messages: c.LogArray, Error: util.ToError(err, httpCode)}
+	return &Result{Success: false, Messages: c.LogArray, Error: errors.ToError(err, httpCode)}
 }
 
 func WrapResult(c *Context, httpCode int, i interface{}) interface{} {

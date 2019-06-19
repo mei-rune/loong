@@ -5,16 +5,16 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/runner-mei/loong/util"
+	"github.com/runner-mei/errors"
 )
 
 var (
-	ErrUnauthorized       = &util.Error{Code: http.StatusUnauthorized, Message: "auth: token is unauthorized"}
-	ErrTokenExpired       = &util.Error{Code: http.StatusUnauthorized, Message: "auth: token is expired"}
-	ErrTokenNotFound      = &util.Error{Code: http.StatusUnauthorized, Message: "auth: no token found"}
-	ErrUserNotFound       = &util.Error{Code: http.StatusForbidden, Message: "auth: user isnot exists"}
-	ErrInvalidCredentials = &util.Error{Code: http.StatusForbidden, Message: "auth: invalid credentials"}
-	ErrSkipped            = &util.Error{Code: http.StatusForbidden, Message: "auth: has not check token"}
+	ErrUnauthorized       = errors.NewHTTPError(http.StatusUnauthorized, "auth: token is unauthorized")
+	ErrTokenExpired       = errors.NewHTTPError(http.StatusUnauthorized, "auth: token is expired")
+	ErrTokenNotFound      = errors.NewHTTPError(http.StatusUnauthorized, "auth: no token found")
+	ErrUserNotFound       = errors.NewHTTPError(http.StatusForbidden, "auth: user isnot exists")
+	ErrInvalidCredentials = errors.NewHTTPError(http.StatusForbidden, "auth: invalid credentials")
+	ErrSkipped            = errors.NewHTTPError(http.StatusForbidden, "auth: has not check token")
 )
 
 type AuthValidateFunc func(ctx context.Context, req *http.Request) (context.Context, error)
