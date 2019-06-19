@@ -25,7 +25,7 @@ func init() {
 		}
 	}
 
-	if name = os.Getenv("LOONG_TRACING_NAME"); name != "" {
+	if name := os.Getenv("LOONG_TRACING_NAME"); name != "" {
 		serviceName = name
 	}
 
@@ -64,4 +64,5 @@ func Init(name string) error {
 	opentracing.SetGlobalTracer(tracer)
 	gTracer = tracer
 	gCloser = closer
+	return nil
 }
