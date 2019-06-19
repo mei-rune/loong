@@ -8,7 +8,7 @@ import (
 	"github.com/kardianos/osext"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go/config"
-	"github.com/uber/jaeger-lib/metrics/prometheus"
+	"github.com/uber/jaeger-lib/metrics/expvar"
 )
 
 var (
@@ -29,7 +29,7 @@ func init() {
 		serviceName = name
 	}
 
-	metricsFactory := prometheus.New()
+	metricsFactory := expvar.NewFactory(10)
 	tracer, closer, err := config.Configuration{
 		ServiceName: serviceName,
 	}.NewTracer(
@@ -50,7 +50,7 @@ func Init(name string) error {
 		name = serviceName
 	}
 
-	metricsFactory := prometheus.New()
+	metricsFactory := expvar.NewFactory(10)
 	tracer, closer, err := config.Configuration{
 		ServiceName: name,
 	}.NewTracer(
