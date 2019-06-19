@@ -14,7 +14,7 @@ func Tracing(comp string) MiddlewareFunc {
 
 			// 监测Header中是否有Trace信息
 			wireContext, err := opentracing.GlobalTracer().Extract(
-				opentracing.TextMap,
+				opentracing.HTTPHeaders,
 				opentracing.HTTPHeadersCarrier(c.Request().Header))
 			if err != nil {
 				if isDebug := c.QueryParam("opentracing"); isDebug != "true" {
@@ -28,7 +28,7 @@ func Tracing(comp string) MiddlewareFunc {
 			defer span.Finish()
 
 			ext.Component.Set(span, comp)
-			ext.SpanKind.Set(span, "server")
+			ext.SpanKind.Set(span, ext.SpanKindRPCServerEnum)
 			ext.HTTPUrl.Set(span, c.Request().Host+c.Request().RequestURI)
 			ext.HTTPMethod.Set(span, c.Request().Method)
 

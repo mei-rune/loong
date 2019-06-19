@@ -476,6 +476,11 @@ func (g *Group) Group(prefix string, m ...MiddlewareFunc) Party {
 	return &Group{g.engine, sg}
 }
 
+func (engine *Engine) SetTracing(componentName string) *Engine {
+	engine.Pre(Tracing(componentName))
+	return engine
+}
+
 func New() *Engine {
 	e := &Engine{
 		Echo: echo.New(),
@@ -507,7 +512,6 @@ func New() *Engine {
 			return next(ctx)
 		}
 	})
-	e.Pre(Tracing("w"))
 	// Middleware
 	e.Echo.Use(middleware.Logger())
 	e.Echo.Use(middleware.Recover())
