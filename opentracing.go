@@ -6,7 +6,7 @@ import (
 	"github.com/runner-mei/log"
 )
 
-func Tracing(comp string) MiddlewareFunc {
+func Tracing(comp string, traceAll bool) MiddlewareFunc {
 	return func(next HandlerFunc) HandlerFunc {
 		return func(c *Context) error {
 			var req = c.Request()
@@ -17,15 +17,18 @@ func Tracing(comp string) MiddlewareFunc {
 				opentracing.HTTPHeaders,
 				opentracing.HTTPHeadersCarrier(c.Request().Header))
 			if err != nil {
-				if isDebug := c.QueryParam("opentracing"); isDebug != "true" {
-					return next(c)
+				if !traceAll {
+					if isDebug := c.QueryParam("opentracing"); isDebug != "true" {
+						return next(c)
+					}
 				}
-
 				span = opentracing.StartSpan(comp + ":" + req.URL.Path)
 			} else {
 				span = opentracing.StartSpan(comp+":"+req.URL.Path, opentracing.ChildOf(wireContext))
 			}
 			defer span.Finish()
+
+			c.StdContext = opentracing.ContextWithSpan(c.StdContext, span)
 
 			ext.Component.Set(span, comp)
 			ext.SpanKind.Set(span, ext.SpanKindRPCServerEnum)

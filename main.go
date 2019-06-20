@@ -476,8 +476,8 @@ func (g *Group) Group(prefix string, m ...MiddlewareFunc) Party {
 	return &Group{g.engine, sg}
 }
 
-func (engine *Engine) SetTracing(componentName string) *Engine {
-	engine.Pre(Tracing(componentName))
+func (engine *Engine) SetTracing(componentName string, traceAll bool) *Engine {
+	engine.Pre(Tracing(componentName, traceAll))
 	return engine
 }
 

@@ -6,15 +6,18 @@ import (
 	"path/filepath"
 
 	"github.com/kardianos/osext"
-	opentracing "github.com/opentracing/opentracing-go"
+	jaeger_client "github.com/uber/jaeger-client-go"
 	"github.com/uber/jaeger-client-go/config"
+	jaeger_zap "github.com/uber/jaeger-client-go/log/zap"
+	"github.com/uber/jaeger-lib/metrics"
 	"github.com/uber/jaeger-lib/metrics/expvar"
+	"go.uber.org/zap"
 )
 
 var (
-	serviceName = "loong"
-	gTracer     opentracing.Tracer
-	gCloser     io.Closer
+	serviceName   = "loong"
+	gCloser       io.Closer
+	metricFactory metrics.Factory
 )
 
 func init() {
@@ -29,40 +32,53 @@ func init() {
 		serviceName = name
 	}
 
-	metricsFactory := expvar.NewFactory(10)
-	tracer, closer, err := config.Configuration{
-		ServiceName: serviceName,
-	}.NewTracer(
-		config.Metrics(metricsFactory),
+	cfg, err := config.FromEnv()
+	if err != nil {
+		panic(err)
+	}
+
+	cfg.Sampler.Type = jaeger_client.SamplerTypeConst
+	cfg.Sampler.Param = 1
+
+	metricFactory = expvar.NewFactory(10)
+	closer, err := cfg.InitGlobalTracer(
+		serviceName,
+		config.Metrics(metricFactory),
 	)
 	if err != nil {
 		panic(err)
 	}
 
-	opentracing.SetGlobalTracer(tracer)
-
-	gTracer = tracer
 	gCloser = closer
 }
 
-func Init(name string) error {
+func Init(name string, logger *zap.Logger) error {
 	if name == "" {
 		name = serviceName
 	}
-
-	metricsFactory := expvar.NewFactory(10)
-	tracer, closer, err := config.Configuration{
-		ServiceName: name,
-	}.NewTracer(
-		config.Metrics(metricsFactory),
-	)
+	cfg, err := config.FromEnv()
 	if err != nil {
-		return err
+		panic(err)
 	}
 
+	cfg.Sampler.Type = jaeger_client.SamplerTypeConst
+	cfg.Sampler.Param = 1
+
 	gCloser.Close()
-	opentracing.SetGlobalTracer(tracer)
-	gTracer = tracer
+
+	var opts = make([]config.Option, 0, 2)
+	opts = append(opts, config.Metrics(metricFactory))
+	if logger != nil {
+		opts = append(opts, config.Logger(jaeger_zap.NewLogger(logger)))
+	}
+
+	closer, err := cfg.InitGlobalTracer(
+		name,
+		opts...,
+	)
+	if err != nil {
+		panic(err)
+	}
 	gCloser = closer
 	return nil
 }
