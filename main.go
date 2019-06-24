@@ -481,6 +481,10 @@ func (engine *Engine) SetTracing(componentName string, traceAll bool) *Engine {
 	return engine
 }
 
+func (engine *Engine) ServeHTTPWithContext(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	engine.ServeHTTP(w, r.WithContext(ctx))
+}
+
 func New() *Engine {
 	e := &Engine{
 		Echo: echo.New(),
