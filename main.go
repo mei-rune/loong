@@ -26,7 +26,7 @@ type Context struct {
 	StdContext context.Context
 
 	CtxLogger       log.Logger
-	WrapResult      func(c *Context, code int, i interface{}) interface{}
+	WrapOkResult    func(c *Context, code int, i interface{}) interface{}
 	WrapErrorResult func(c *Context, code int, err error) interface{}
 	LogArray        []string
 }
@@ -36,8 +36,8 @@ func (c *Context) QueryParamArray(name string) []string {
 }
 
 func (c *Context) ReturnResult(code int, i interface{}) error {
-	if c.WrapResult != nil {
-		i = c.WrapResult(c, code, i)
+	if c.WrapOkResult != nil {
+		i = c.WrapOkResult(c, code, i)
 	}
 	return c.JSON(code, i)
 }
@@ -230,7 +230,7 @@ type Engine struct {
 	*echo.Echo
 
 	Logger          log.Logger
-	WrapResult      func(c *Context, code int, i interface{}) interface{}
+	WrapOkResult    func(c *Context, code int, i interface{}) interface{}
 	WrapErrorResult func(c *Context, code int, err error) interface{}
 }
 
@@ -505,7 +505,7 @@ func New() *Engine {
 			actx := &Context{
 				Context:         ctx,
 				StdContext:      req.Context(),
-				WrapResult:      e.WrapResult,
+				WrapOkResult:    e.WrapOkResult,
 				WrapErrorResult: e.WrapErrorResult,
 			}
 			if e.Logger != nil {
