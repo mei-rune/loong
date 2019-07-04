@@ -489,6 +489,8 @@ func New() *Engine {
 	e := &Engine{
 		Echo: echo.New(),
 	}
+
+	e.Echo.Pre(middleware.RemoveTrailingSlash())
 	// e.Echo.Pre(middleware.AddTrailingSlash())
 	e.Echo.Pre(middleware.MethodOverrideWithConfig(middleware.MethodOverrideConfig{
 		Getter: func(c echo.Context) string {
