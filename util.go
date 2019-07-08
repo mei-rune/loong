@@ -10,6 +10,9 @@ var (
 	TimeFormats = []string{
 		time.RFC3339,
 		time.RFC3339Nano,
+		"2006-01-02 15:04:05Z07:00",
+		"2006-01-02 15:04:05.999999999Z07:00",
+		"2006-01-02",
 	}
 	TimeLocation = time.Local
 )
