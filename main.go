@@ -66,22 +66,22 @@ func (c *Context) ReturnError(err error, code ...int) error {
 	var httpCode int
 	if len(code) > 0 {
 		httpCode = code[0]
+	} else {
+		httpCode = http.StatusInternalServerError
 	}
-	if httpCode == 0 {
-		if a, ok := err.(interface {
-			HTTPCode() int
-		}); ok {
-			httpCode = a.HTTPCode()
-		} else {
-			httpCode = http.StatusInternalServerError
-		}
+
+	if a, ok := err.(errors.HTTPError); ok {
+		httpCode = a.HTTPCode()
+	} else {
+		httpCode = http.StatusInternalServerError
+		err = errors.ToError(err, httpCode)
 	}
 
 	if c.WrapErrorResult != nil {
 		return c.JSON(httpCode, c.WrapErrorResult(c, httpCode, err))
 	}
 
-	return c.JSON(httpCode, errors.ToError(err, httpCode))
+	return c.JSON(httpCode, err)
 }
 
 var _ echo.Context = &Context{}
