@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/log"
 )
@@ -476,8 +477,8 @@ func (g *Group) Group(prefix string, m ...MiddlewareFunc) Party {
 	return &Group{g.engine, sg}
 }
 
-func (engine *Engine) SetTracing(componentName string, traceAll bool) *Engine {
-	engine.Pre(Tracing(componentName, traceAll))
+func (engine *Engine) SetTracing(tracer opentracing.Tracer, componentName string, traceAll bool) *Engine {
+	engine.Pre(Tracing(tracer, componentName, traceAll))
 	return engine
 }
 

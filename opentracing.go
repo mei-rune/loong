@@ -9,14 +9,18 @@ import (
 	"github.com/runner-mei/log"
 )
 
-func Tracing(comp string, traceAll bool) MiddlewareFunc {
+func Tracing(tracer opentracing.Tracer, comp string, traceAll bool) MiddlewareFunc {
+	if tracer == nil {
+		tracer = opentracing.GlobalTracer()
+	}
+
 	return func(next HandlerFunc) HandlerFunc {
 		return func(c *Context) error {
 			var req = c.Request()
 			var span opentracing.Span
 
 			// 监测Header中是否有Trace信息
-			wireContext, err := opentracing.GlobalTracer().Extract(
+			wireContext, err := tracer.Extract(
 				opentracing.HTTPHeaders,
 				opentracing.HTTPHeadersCarrier(c.Request().Header))
 			if err != nil {
