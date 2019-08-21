@@ -3,9 +3,7 @@ package jaeger
 import (
 	"io"
 	"os"
-	"path/filepath"
 
-	"github.com/kardianos/osext"
 	jaeger_client "github.com/uber/jaeger-client-go"
 	"github.com/uber/jaeger-client-go/config"
 	jaeger_zap "github.com/uber/jaeger-client-go/log/zap"
@@ -20,39 +18,11 @@ var (
 	metricFactory metrics.Factory
 )
 
-func init() {
-	if name, _ := osext.Executable(); name != "" {
-		name = filepath.Base(name)
-		if name != "" {
-			serviceName = name
-		}
-	}
-
-	if name := os.Getenv("LOONG_TRACING_NAME"); name != "" {
-		serviceName = name
-	}
-
-	cfg, err := config.FromEnv()
-	if err != nil {
-		panic(err)
-	}
-
-	cfg.Sampler.Type = jaeger_client.SamplerTypeConst
-	cfg.Sampler.Param = 1
-
-	metricFactory = expvar.NewFactory(10)
-	closer, err := cfg.InitGlobalTracer(
-		serviceName,
-		config.Metrics(metricFactory),
-	)
-	if err != nil {
-		panic(err)
-	}
-
-	gCloser = closer
-}
-
 func Init(name string, logger *zap.Logger) error {
+	if value := os.Getenv("OPENTRACE_ENABLED"); value != "enabled" {
+		return nil
+	}
+
 	if name == "" {
 		name = serviceName
 	}
@@ -65,6 +35,10 @@ func Init(name string, logger *zap.Logger) error {
 	cfg.Sampler.Param = 1
 
 	gCloser.Close()
+
+	if metricFactory == nil {
+		metricFactory = expvar.NewFactory(10)
+	}
 
 	var opts = make([]config.Option, 0, 2)
 	opts = append(opts, config.Metrics(metricFactory))
