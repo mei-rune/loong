@@ -548,6 +548,13 @@ func WrapHandler(handler http.Handler) HandlerFunc {
 	}
 }
 
+func WrapHandlerFunc(handler http.HandlerFunc) HandlerFunc {
+	return func(c *Context) error {
+		handler(c.Response(), c.Request())
+		return nil
+	}
+}
+
 type ContextHandlerFunc func(context.Context, http.ResponseWriter, *http.Request)
 
 func WrapContextHandler(handler ContextHandlerFunc) HandlerFunc {
