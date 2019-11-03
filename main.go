@@ -5,8 +5,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+   "github.com/labstack/echo/v4"
+   "github.com/labstack/echo/v4/middleware"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/log"
