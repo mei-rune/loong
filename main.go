@@ -14,6 +14,7 @@ import (
 
 const MyContextKey = "my-context-key"
 
+var ErrUnsupportedMediaType = echo.ErrUnsupportedMediaType
 var ErrNotFound = echo.ErrNotFound
 var ErrBadArgument = errors.ErrBadArgument
 var WithHTTPCode = errors.WithHTTPCode
