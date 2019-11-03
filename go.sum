@@ -38,6 +38,7 @@ github.com/runner-mei/errors v0.0.0-20191030090348-38af1672ff66 h1:RdPUaLzJE68Q0
 github.com/runner-mei/errors v0.0.0-20191030090348-38af1672ff66/go.mod h1:A9g5ObsQyz8QUKR+IbHEmUlfkbrRMYLWPrtGJHzAWKs=
 github.com/runner-mei/log v0.0.0-20191030043614-b36db325a74d h1:ziwdSgEC4lJRJls17Stq+tPcwM4k/j0T+UB9GzbJhP4=
 github.com/runner-mei/log v0.0.0-20191030043614-b36db325a74d/go.mod h1:yyWfw0HOYyKnEBHLWiKJFdHmo47QOetYqiS79vnfAJs=
+github.com/runner-mei/log v1.0.0/go.mod h1:0MveRoRDnCixGyy6HUWm7+aAA+AjcLV0JU3EHg0sEJM=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/stretchr/testify v1.4.0 h1:2E4SXV/wtOkTonXsotYi4li6zVWxYlZuYNCXe9XRJyk=

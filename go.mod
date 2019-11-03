@@ -11,7 +11,7 @@ require (
 	github.com/labstack/gommon v0.3.0 // indirect
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/runner-mei/errors v0.0.0-20191030090348-38af1672ff66
-	github.com/runner-mei/log v0.0.0-20191030043614-b36db325a74d
+	github.com/runner-mei/log v1.0.0
 	github.com/uber/jaeger-client-go v2.19.0+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible
 	github.com/valyala/fasttemplate v1.1.0 // indirect
