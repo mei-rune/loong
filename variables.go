@@ -4,6 +4,10 @@ import "context"
 
 type userKey struct{}
 
+func (*userKey) String() string {
+	return "loong-user-key"
+}
+
 var UserKey = &userKey{}
 
 func ContextWithUser(ctx context.Context, u interface{}) context.Context {
@@ -16,6 +20,10 @@ func UserFromContext(ctx context.Context) interface{} {
 
 type tokenKey struct{}
 
+func (*tokenKey) String() string {
+	return "loong-token-key"
+}
+
 var TokenKey = &tokenKey{}
 
 func ContextWithToken(ctx context.Context, u interface{}) context.Context {
@@ -27,6 +35,10 @@ func TokenFromContext(ctx context.Context) interface{} {
 }
 
 type sessionKey struct{}
+
+func (*sessionKey) String() string {
+	return "loong-session-key"
+}
 
 var SessionKey = &sessionKey{}
 
