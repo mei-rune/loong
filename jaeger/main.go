@@ -19,7 +19,7 @@ var (
 )
 
 func Init(name string, logger *zap.Logger) error {
-	if value := os.Getenv("OPENTRACE_ENABLED"); value != "enabled" {
+	if value := os.Getenv("OPENTRACE_ENABLED"); value == "disabled" {
 		return nil
 	}
 
