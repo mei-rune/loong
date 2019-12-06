@@ -34,7 +34,9 @@ func Init(name string, logger *zap.Logger) error {
 	cfg.Sampler.Type = jaeger_client.SamplerTypeConst
 	cfg.Sampler.Param = 1
 
-	gCloser.Close()
+	if gCloser != nil {
+		gCloser.Close()
+	}
 
 	if metricFactory == nil {
 		metricFactory = expvar.NewFactory(10)
