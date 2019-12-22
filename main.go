@@ -16,7 +16,7 @@ const MyContextKey = "my-context-key"
 
 var ErrUnsupportedMediaType = echo.ErrUnsupportedMediaType
 var ErrNotFound = echo.ErrNotFound
-var ErrBadArgument = errors.ErrBadArgument
+var ErrBadArgument = errors.BadArgument
 var WithHTTPCode = errors.WithHTTPCode
 var Wrap = errors.Wrap
 
