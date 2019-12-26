@@ -5,8 +5,8 @@ import (
 	"io"
 	"net/http"
 
-   "github.com/labstack/echo/v4"
-   "github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/log"
@@ -16,7 +16,7 @@ const MyContextKey = "my-context-key"
 
 var ErrUnsupportedMediaType = echo.ErrUnsupportedMediaType
 var ErrNotFound = echo.ErrNotFound
-var ErrBadArgument = errors.BadArgument
+var ErrBadArgument = errors.ErrBadArgument
 var WithHTTPCode = errors.WithHTTPCode
 var Wrap = errors.Wrap
 
