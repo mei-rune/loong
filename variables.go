@@ -8,13 +8,24 @@ func (*userKey) String() string {
 	return "loong-user-key"
 }
 
-var UserKey = &userKey{}
+var (
+    UserKey = &userKey{}
 
+    ContextWithUserHook func(ctx context.Context, u interface{}) context.Context
+    UserFromContextHook func(ctx context.Context) interface{}
+)
+    
 func ContextWithUser(ctx context.Context, u interface{}) context.Context {
+    if ContextWithUserHook != nil {
+        return ContextWithUserHook(ctx, u)
+    }
 	return context.WithValue(ctx, UserKey, u)
 }
 
 func UserFromContext(ctx context.Context) interface{} {
+    if UserFromContextHook != nil {
+        return UserFromContextHook(ctx)
+    }
 	return ctx.Value(UserKey)
 }
 
