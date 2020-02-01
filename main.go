@@ -5,8 +5,8 @@ import (
 	"io"
 	"net/http"
 
-   "github.com/labstack/echo/v4"
-   "github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/log"
@@ -525,11 +525,19 @@ func New() *Engine {
 	e.Echo.Use(middleware.Recover())
 	e.Echo.HTTPErrorHandler = echo.HTTPErrorHandler(func(err error, c echo.Context) {
 		if e.Logger != nil {
-			e.Logger.Warn("处理请求发生错误",
-				log.String("method", c.Request().Method),
-				log.String("url", c.Request().RequestURI),
-				log.Error(err))
+			if err != ErrNotFound {
+				e.Logger.Warn("没有找到请求的处理函数",
+					log.String("method", c.Request().Method),
+					log.String("url", c.Request().RequestURI),
+					log.Error(err))
+			} else {
+				e.Logger.Warn("处理请求发生错误",
+					log.String("method", c.Request().Method),
+					log.String("url", c.Request().RequestURI),
+					log.Error(err))
+			}
 		}
+
 		e.Echo.DefaultHTTPErrorHandler(err, c)
 	})
 
