@@ -50,9 +50,17 @@ func JWTCheck(ja *JWTAuth) TokenCheckFunc {
 		// Verify the token
 		token, err := ja.Decode(tokenStr)
 		if err != nil {
-			switch err.Error() {
-			case "token is expired":
+			if ve, ok := err.(*jwt.ValidationError); ok {
+				if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
+					// Token is either expired or not active yet
+					err = ErrTokenExpired
+				} else {
+					err = WithHTTPCode(err, http.StatusUnauthorized)
+				}
+			} else if strings.HasPrefix(err.Error(), "token is expired") {
 				err = ErrTokenExpired
+			} else {
+				err = WithHTTPCode(err, http.StatusUnauthorized)
 			}
 			return nil, err
 		}
