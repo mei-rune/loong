@@ -42,3 +42,14 @@ func WrapErrorResult(c *Context, httpCode int, err error) interface{} {
 func WrapResult(c *Context, httpCode int, i interface{}) interface{} {
 	return &Result{Success: true, Data: i}
 }
+
+func ResultWrapMiddleware(okResult func(c *Context, code int, i interface{}) interface{},
+	errorResult func(ctx *Context, code int, err error) interface{}) MiddlewareFunc {
+	return MiddlewareFunc(func(next HandlerFunc) HandlerFunc {
+		return func(ctx *Context) error {
+			ctx.WrapOkResult = okResult
+			ctx.WrapErrorResult = errorResult
+			return next(ctx)
+		}
+	})
+}
