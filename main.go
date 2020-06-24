@@ -496,11 +496,25 @@ func New() *Engine {
 	// e.Echo.Pre(middleware.AddTrailingSlash())
 	e.Echo.Pre(middleware.MethodOverrideWithConfig(middleware.MethodOverrideConfig{
 		Getter: func(c echo.Context) string {
-			m := c.FormValue("_method")
+			m := c.QueryParam("_method")
 			if m != "" {
 				return m
 			}
-			return c.QueryParam("_method")
+			return c.Request().Header.Get("X-HTTP-Method-Override")
+
+			// 不用用  c.FormValue("_method"), 因为调用它时会读 body, 然后
+			// http.Handler 就读不到无效了
+
+			// r := c.Request()
+
+			// var buf = bytes.NewBuffer(make([]byte, 0, len(r.ContentLength)))
+			// r.Body = &teeReader{r: r.Body, w: buf}
+
+			// m = c.FormValue("_method")
+			// if buf.Len() > 0 {
+			// 	r.Body = buf
+			// }
+			// return m
 		}}))
 
 	e.Echo.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
