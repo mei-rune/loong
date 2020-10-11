@@ -586,3 +586,7 @@ func WrapContextHandler(handler ContextHandlerFunc) HandlerFunc {
 		return nil
 	}
 }
+
+type ContextHandler interface {
+	ServeHTTP(ctx context.Context, w http.ResponseWriter, r *http.Request)
+}
