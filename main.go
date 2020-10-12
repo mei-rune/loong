@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -229,11 +230,17 @@ type Party interface {
 }
 
 type Engine struct {
-	*echo.Echo
+	Echo *echo.Echo
 
 	Logger          log.Logger
 	WrapOkResult    func(c *Context, code int, i interface{}) interface{}
 	WrapErrorResult func(c *Context, code int, err error) interface{}
+
+	noRoutes []struct {
+		prefix  string
+		handler HandlerFunc
+	}
+	noRoute HandlerFunc
 }
 
 func (e *Engine) convertHandler(h HandlerFunc) echo.HandlerFunc {
@@ -484,7 +491,45 @@ func (engine *Engine) SetTracing(tracer opentracing.Tracer, componentName string
 }
 
 func (engine *Engine) ServeHTTPWithContext(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	engine.ServeHTTP(w, r.WithContext(ctx))
+	engine.Echo.ServeHTTP(w, r.WithContext(ctx))
+}
+
+func (engine *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	engine.Echo.ServeHTTP(w, r)
+}
+
+func (engine *Engine) NoRoute(prefix string, handler HandlerFunc) {
+	engine.noRoutes = append(engine.noRoutes, struct {
+		prefix  string
+		handler HandlerFunc
+	}{
+		prefix:  prefix,
+		handler: handler,
+	})
+}
+
+func (engine *Engine) NoRouteAny(handler HandlerFunc) {
+	engine.noRoute = handler
+}
+
+func (engine *Engine) Routes() []*echo.Route {
+	return engine.Echo.Routes()
+}
+
+func toContext(e *Engine, ctx echo.Context) *Context {
+	req := ctx.Request()
+	actx := &Context{
+		Context:         ctx,
+		StdContext:      req.Context(),
+		WrapOkResult:    e.WrapOkResult,
+		WrapErrorResult: e.WrapErrorResult,
+	}
+	if e.Logger != nil {
+		actx.CtxLogger = e.Logger.With(log.String("http.method", req.Method), log.Stringer("http.url", req.URL))
+		actx.StdContext = log.ContextWithLogger(actx.StdContext, actx.CtxLogger)
+	}
+	ctx.Set(MyContextKey, actx)
+	return actx
 }
 
 func New() *Engine {
@@ -519,25 +564,46 @@ func New() *Engine {
 
 	e.Echo.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			req := ctx.Request()
-			actx := &Context{
-				Context:         ctx,
-				StdContext:      req.Context(),
-				WrapOkResult:    e.WrapOkResult,
-				WrapErrorResult: e.WrapErrorResult,
-			}
-			if e.Logger != nil {
-				actx.CtxLogger = e.Logger.With(log.String("http.method", req.Method), log.Stringer("http.url", req.URL))
-				actx.StdContext = log.ContextWithLogger(actx.StdContext, actx.CtxLogger)
-			}
-			ctx.Set(MyContextKey, actx)
+			toContext(e, ctx)
 			return next(ctx)
 		}
 	})
+
+	getContext := func(ctx echo.Context) *Context {
+		if actx, ok := ctx.(*Context); ok {
+			return actx
+		}
+		o := ctx.Get(MyContextKey)
+		if o != nil {
+			if actx, ok := o.(*Context); ok {
+				return actx
+			}
+		}
+
+		return toContext(e, ctx)
+	}
+
 	// Middleware
 	e.Echo.Use(middleware.Logger())
 	e.Echo.Use(middleware.Recover())
 	e.Echo.HTTPErrorHandler = echo.HTTPErrorHandler(func(err error, c echo.Context) {
+		if err == echo.ErrNotFound {
+			pa := c.Request().URL.Path
+			for idx := range e.noRoutes {
+				if strings.HasPrefix(pa, e.noRoutes[idx].prefix) {
+					err = e.noRoutes[idx].handler(getContext(c))
+					if err == nil {
+						return
+					}
+					break
+				}
+			}
+		} else if e.noRoute != nil {
+			err = e.noRoute(getContext(c))
+			if err == nil {
+				return
+			}
+		}
 		if e.Logger != nil {
 			if err != ErrNotFound {
 				e.Logger.Warn("没有找到请求的处理函数",
