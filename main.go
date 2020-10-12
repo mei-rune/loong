@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"fmt"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -569,9 +568,6 @@ func New() *Engine {
 			return next(ctx)
 		}
 	})
-	// Middleware
-	e.Echo.Use(middleware.Logger())
-	e.Echo.Use(middleware.Recover())
 
 	getContext := func(ctx echo.Context) *Context {
 		if actx, ok := ctx.(*Context); ok {
@@ -585,6 +581,11 @@ func New() *Engine {
 		return toContext(e, ctx)
 	}
 
+	// Middleware
+	e.Echo.Use(middleware.Logger())
+	e.Echo.Use(middleware.Recover())
+
+
 	e.Echo.HTTPErrorHandler = echo.HTTPErrorHandler(func(err error, c echo.Context) {
 		if len(e.noRoutes) > 0 && err == echo.ErrNotFound {
 			pa := c.Request().URL.Path
@@ -596,11 +597,8 @@ func New() *Engine {
 					}
 					break
 				}
-				fmt.Println("==============")
-				fmt.Println(pa, e.noRoutes[idx].prefix)
 			}
-		}
-		if e.noRoute != nil {
+		} else if e.noRoute != nil {
 			err = e.noRoute(getContext(c))
 			if err == nil {
 				return
