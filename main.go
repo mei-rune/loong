@@ -586,21 +586,24 @@ func New() *Engine {
 	e.Echo.Use(middleware.Recover())
 
 	e.Echo.HTTPErrorHandler = echo.HTTPErrorHandler(func(err error, c echo.Context) {
-		if len(e.noRoutes) > 0 && err == echo.ErrNotFound {
-			pa := c.Request().URL.Path
-			for idx := range e.noRoutes {
-				if strings.HasPrefix(pa, e.noRoutes[idx].prefix) {
-					err = e.noRoutes[idx].handler(getContext(c))
-					if err == nil {
-						return
+		if err == echo.ErrNotFound {
+			if len(e.noRoutes) > 0 {
+				pa := c.Request().URL.Path
+				for idx := range e.noRoutes {
+					if strings.HasPrefix(pa, e.noRoutes[idx].prefix) {
+						err = e.noRoutes[idx].handler(getContext(c))
+						if err == nil {
+							return
+						}
+						break
 					}
-					break
 				}
 			}
-		} else if e.noRoute != nil {
-			err = e.noRoute(getContext(c))
-			if err == nil {
-				return
+			if e.noRoute != nil {
+				err = e.noRoute(getContext(c))
+				if err == nil {
+					return
+				}
 			}
 		}
 
