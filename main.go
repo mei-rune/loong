@@ -585,7 +585,6 @@ func New() *Engine {
 	e.Echo.Use(middleware.Logger())
 	e.Echo.Use(middleware.Recover())
 
-
 	e.Echo.HTTPErrorHandler = echo.HTTPErrorHandler(func(err error, c echo.Context) {
 		if len(e.noRoutes) > 0 && err == echo.ErrNotFound {
 			pa := c.Request().URL.Path
@@ -606,10 +605,11 @@ func New() *Engine {
 		}
 
 		if e.Logger != nil {
-			if err != ErrNotFound {
+			if err == ErrNotFound {
 				e.Logger.Warn("没有找到请求的处理函数",
 					log.String("method", c.Request().Method),
 					log.String("url", c.Request().RequestURI),
+					log.String("path", c.Request().URL.Path),
 					log.Error(err))
 			} else {
 				e.Logger.Warn("处理请求发生错误",
