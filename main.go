@@ -2,7 +2,6 @@ package loong
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
