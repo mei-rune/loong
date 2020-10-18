@@ -2,6 +2,7 @@ package loong
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -240,7 +241,7 @@ type Engine struct {
 		prefix  string
 		handler HandlerFunc
 	}
-	noRoute HandlerFunc
+	anyNoRoutes []HandlerFunc
 }
 
 func (e *Engine) convertHandler(h HandlerFunc) echo.HandlerFunc {
@@ -400,7 +401,7 @@ func (e *Engine) NoRoute(prefix string, handler HandlerFunc, m ...MiddlewareFunc
 }
 
 func (e *Engine) NoRouteAny(handler HandlerFunc) {
-	e.noRoute = handler
+	e.anyNoRoutes = append(e.anyNoRoutes, handler)
 }
 
 type Group struct {
@@ -599,10 +600,17 @@ func New() *Engine {
 					}
 				}
 			}
-			if e.noRoute != nil {
-				err = e.noRoute(getContext(c))
-				if err == nil {
-					return
+
+			if len(e.anyNoRoutes) > 0 {
+				ctx := getContext(c)
+				for _, noRoute := range e.anyNoRoutes {
+					err = noRoute(ctx)
+					if err == nil {
+						return
+					}
+					if err != ErrNotFound {
+						break
+					}
 				}
 			}
 		}
