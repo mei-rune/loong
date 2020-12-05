@@ -29,9 +29,9 @@ func Tracing(tracer opentracing.Tracer, comp string, traceAll bool) MiddlewareFu
 						return next(c)
 					}
 				}
-				span = opentracing.StartSpan(comp + ":" + req.URL.Path)
+				span = tracer.StartSpan(comp + ":" + req.URL.Path)
 			} else {
-				span = opentracing.StartSpan(comp+":"+req.URL.Path, opentracing.ChildOf(wireContext))
+				span = tracer.StartSpan(comp+":"+req.URL.Path, opentracing.ChildOf(wireContext))
 			}
 			defer span.Finish()
 
@@ -60,13 +60,17 @@ func Tracing(tracer opentracing.Tracer, comp string, traceAll bool) MiddlewareFu
 	}
 }
 
-func RawTracing(comp string, traceAll bool) func(ContextHandlerFunc) ContextHandlerFunc {
+func RawTracing(tracer opentracing.Tracer, comp string, traceAll bool) func(ContextHandlerFunc) ContextHandlerFunc {
+	if tracer == nil {
+		tracer = opentracing.GlobalTracer()
+	}
+
 	return func(next ContextHandlerFunc) ContextHandlerFunc {
 		hfn := func(ctx context.Context, w http.ResponseWriter, req *http.Request) {
 			var span opentracing.Span
 
 			// 监测Header中是否有Trace信息
-			wireContext, err := opentracing.GlobalTracer().Extract(
+			wireContext, err := tracer.Extract(
 				opentracing.HTTPHeaders,
 				opentracing.HTTPHeadersCarrier(req.Header))
 			if err != nil {
@@ -76,9 +80,9 @@ func RawTracing(comp string, traceAll bool) func(ContextHandlerFunc) ContextHand
 						return
 					}
 				}
-				span = opentracing.StartSpan(comp + ":" + req.URL.Path)
+				span = tracer.StartSpan(comp + ":" + req.URL.Path)
 			} else {
-				span = opentracing.StartSpan(comp+":"+req.URL.Path, opentracing.ChildOf(wireContext))
+				span = tracer.StartSpan(comp+":"+req.URL.Path, opentracing.ChildOf(wireContext))
 			}
 			defer span.Finish()
 
