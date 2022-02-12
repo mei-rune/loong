@@ -70,14 +70,7 @@ func (c *Context) ReturnError(err error, code ...int) error {
 	if len(code) > 0 {
 		httpCode = code[0]
 	} else {
-		httpCode = http.StatusInternalServerError
-	}
-
-	if a, ok := err.(errors.HTTPError); ok {
-		httpCode = a.HTTPCode()
-	} else {
-		httpCode = http.StatusInternalServerError
-		err = errors.ToError(err, httpCode)
+		httpCode = errors.HTTPCode(err, http.StatusInternalServerError)
 	}
 
 	if c.WrapErrorResult != nil {
