@@ -77,6 +77,8 @@ github.com/runner-mei/errors v0.0.0-20191030090348-38af1672ff66 h1:RdPUaLzJE68Q0
 github.com/runner-mei/errors v0.0.0-20191030090348-38af1672ff66/go.mod h1:A9g5ObsQyz8QUKR+IbHEmUlfkbrRMYLWPrtGJHzAWKs=
 github.com/runner-mei/errors v0.0.0-20211208021129-603ff364d8b8 h1:60J1UoArZXNbPJS3ypuzy0Ji5yVFGJt+3vFmK2zaqPQ=
 github.com/runner-mei/errors v0.0.0-20211208021129-603ff364d8b8/go.mod h1:A9g5ObsQyz8QUKR+IbHEmUlfkbrRMYLWPrtGJHzAWKs=
+github.com/runner-mei/errors v0.0.0-20220212075214-841cd0837bdc h1:b3XZgINFAJ8mCNQ2ICHPCoF8w0wpcXlcdy1TTe7XFdE=
+github.com/runner-mei/errors v0.0.0-20220212075214-841cd0837bdc/go.mod h1:A9g5ObsQyz8QUKR+IbHEmUlfkbrRMYLWPrtGJHzAWKs=
 github.com/runner-mei/log v1.0.0 h1:8o+or+GF3jwU6ZOVnK7CJSP0fjQMd8P4+2hTeAxBQ5A=
 github.com/runner-mei/log v1.0.0/go.mod h1:0MveRoRDnCixGyy6HUWm7+aAA+AjcLV0JU3EHg0sEJM=
 github.com/runner-mei/log v1.0.8 h1:DTP5Q4F9XHtlfAI7smDhs7GvAOA+Foy3SlQEsStIagA=

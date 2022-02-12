@@ -14,7 +14,7 @@ require (
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/runner-mei/GoBatis v1.2.0 // indirect
-	github.com/runner-mei/errors v0.0.0-20211208021129-603ff364d8b8
+	github.com/runner-mei/errors v0.0.0-20220212075214-841cd0837bdc
 	github.com/runner-mei/log v1.0.8
 	github.com/uber/jaeger-client-go v2.19.0+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible
