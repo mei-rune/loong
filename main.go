@@ -20,6 +20,7 @@ var ErrNotFound = echo.ErrNotFound
 var ErrBadArgument = errors.BadArgument
 var WithHTTPCode = errors.WithHTTPCode
 var Wrap = errors.Wrap
+var ToHTTPError = errors.ToApplicationError
 
 type Error = errors.Error
 type HTTPError = errors.HTTPError
@@ -77,7 +78,7 @@ func (c *Context) ReturnError(err error, code ...int) error {
 		return c.JSON(httpCode, c.WrapErrorResult(c, httpCode, err))
 	}
 
-	return c.JSON(httpCode, err)
+	return c.JSON(httpCode, ToHTTPError(err, httpCode))
 }
 
 var _ echo.Context = &Context{}
