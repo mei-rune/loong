@@ -1,10 +1,64 @@
 package loong
 
 import (
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/runner-mei/errors"
 )
+
+func BoolToString(b bool) string {
+	if b {
+		return "true"
+	}
+	return "false"
+}
+
+func ToBool(s string) bool {
+	s = strings.ToLower(s)
+	return s == "true" || s == "on" || s == "yes" || s == "enabled"
+}
+
+func ToInt64Array(array []string) ([]int64, error) {
+	var int64Array []int64
+	for _, s := range array {
+		ss := strings.Split(s, ",")
+		for _, v := range ss {
+			if v == "" {
+				continue
+			}
+			i64, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			int64Array = append(int64Array, i64)
+		}
+	}
+	return int64Array, nil
+}
+
+func ToBoolArray(array []string) ([]bool, error) {
+	var boolArray []bool
+	for _, s := range array {
+		ss := strings.Split(s, ",")
+		for _, v := range ss {
+			if v == "" {
+				continue
+			}
+
+			switch v {
+			case "TRUE", "True", "true", "YES", "Yes", "yes", "on", "enabled":
+				boolArray = append(boolArray, true)
+			case "FALSE", "False", "false", "NO", "No", "no", "off":
+				boolArray = append(boolArray, false)
+			default:
+				return nil, errors.New("convert '" + v + "' to bool failure")
+			}
+		}
+	}
+	return boolArray, nil
+}
 
 var (
 	TimeFormats = []string{
@@ -30,6 +84,24 @@ func ToDatetime(s string) (time.Time, error) {
 	}
 
 	return time.Time{}, errors.New("'" + s + "' isnot datetime")
+}
+
+func ToDatetimes(array []string) ([]time.Time, error) {
+	var timeArray []time.Time
+	for _, s := range array {
+		ss := strings.Split(s, ",")
+		for _, v := range ss {
+			if v == "" {
+				continue
+			}
+			t, err := ToDatetime(v)
+			if err != nil {
+				return nil, err
+			}
+			timeArray = append(timeArray, t)
+		}
+	}
+	return timeArray, nil
 }
 
 type Result struct {
