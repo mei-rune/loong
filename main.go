@@ -11,6 +11,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/log"
+	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 const MyContextKey = "my-context-key"
@@ -524,6 +525,16 @@ func toContext(e *Engine, ctx echo.Context) *Context {
 	}
 	ctx.Set(MyContextKey, actx)
 	return actx
+}
+
+func (engine *Engine) EnalbeSwaggerAt(prefix string) {
+	if !strings.HasPrefix(prefix, "/") {
+		prefix = "/" +prefix
+	}
+	if !strings.HasSuffix(prefix, "/") {
+		prefix = prefix + "/"
+	}
+	engine.Echo.GET(prefix + "*", echoSwagger.WrapHandler)
 }
 
 func New() *Engine {
