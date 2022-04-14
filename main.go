@@ -527,7 +527,7 @@ func toContext(e *Engine, ctx echo.Context) *Context {
 	return actx
 }
 
-func (engine *Engine) EnalbeSwaggerAt(prefix string) {
+func (engine *Engine) EnalbeSwaggerAt(prefix, instanceName string) {
 	if !strings.HasPrefix(prefix, "/") {
 		prefix = "/" +prefix
 	}
@@ -539,13 +539,15 @@ func (engine *Engine) EnalbeSwaggerAt(prefix string) {
 		}
 	}
 
+	handler := echoSwagger.EchoWrapHandler(echoSwagger.InstanceName(instanceName))
+
 	noStar := strings.TrimSuffix(prefix, "*")
 	engine.Echo.GET(prefix, func(c echo.Context) error{
 		index := strings.Index(c.Request().RequestURI, noStar)
 		if index >= 0 {
 			c.Request().RequestURI = c.Request().RequestURI[index:]
 		}
-		return echoSwagger.WrapHandler(c)
+		return handler(c)
 	})
 }
 
