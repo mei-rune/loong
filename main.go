@@ -531,10 +531,22 @@ func (engine *Engine) EnalbeSwaggerAt(prefix string) {
 	if !strings.HasPrefix(prefix, "/") {
 		prefix = "/" +prefix
 	}
-	if !strings.HasSuffix(prefix, "/") {
-		prefix = prefix + "/"
+	if !strings.HasSuffix(prefix, "/*") {
+		if strings.HasSuffix(prefix, "/") {
+			prefix = prefix + "*"
+		} else {
+			prefix = prefix + "/*"
+		}
 	}
-	engine.Echo.GET(prefix + "*", echoSwagger.WrapHandler)
+
+	noStar := strings.TrimSuffix(prefix, "*")
+	engine.Echo.GET(prefix, func(c echo.Context) error{
+		index := strings.Index(c.Request().RequestURI, noStar)
+		if index >= 0 {
+			c.Request().RequestURI = c.Request().RequestURI[index:]
+		}
+		return echoSwagger.WrapHandler(c)
+	})
 }
 
 func New() *Engine {
