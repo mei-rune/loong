@@ -37,7 +37,11 @@ type Context struct {
 }
 
 func (c *Context) QueryParamArray(name string) []string {
-	return c.QueryParams()[name]
+	results, ok := c.QueryParams()[name]
+	if !ok && !strings.HasSuffix(name, "[]") {
+		results = c.QueryParams()[name+"[]"]
+	}
+	return results
 }
 
 func (c *Context) ReturnResult(code int, i interface{}) error {
