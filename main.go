@@ -535,24 +535,31 @@ func (engine *Engine) EnalbeSwaggerAt(prefix, instanceName string) {
 	if !strings.HasPrefix(prefix, "/") {
 		prefix = "/" +prefix
 	}
-	if !strings.HasSuffix(prefix, "/*") {
-		if strings.HasSuffix(prefix, "/") {
-			prefix = prefix + "*"
-		} else {
-			prefix = prefix + "/*"
-		}
+	if strings.HasSuffix(prefix, "/") {
+		prefix = strings.TrimSuffix(prefix, "/")
 	}
 
 	handler := echoSwagger.EchoWrapHandler(echoSwagger.InstanceName(instanceName))
 
-	noStar := strings.TrimSuffix(prefix, "*")
-	engine.Echo.GET(prefix, func(c echo.Context) error{
-		index := strings.Index(c.Request().RequestURI, noStar)
-		if index >= 0 {
-			c.Request().RequestURI = c.Request().RequestURI[index:]
+	mux := engine.Echo.Group(prefix, func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error{
+			rawRequestURI := c.Request().RequestURI
+			index := strings.Index(rawRequestURI, prefix)
+			if index >= 0 {
+				c.Request().RequestURI = rawRequestURI[index:]
+			}
+			if c.Request().RequestURI == prefix || 
+				c.Request().RequestURI == prefix  + "/" {
+				if strings.HasSuffix(rawRequestURI, "/") {
+					return c.Redirect(http.StatusTemporaryRedirect, rawRequestURI + "index.html")
+				} else {
+					return c.Redirect(http.StatusTemporaryRedirect, rawRequestURI + "/index.html")
+				}
+			}
+			return next(c)
 		}
-		return handler(c)
 	})
+	mux.Any("/*", handler)
 }
 
 func New() *Engine {
@@ -560,7 +567,35 @@ func New() *Engine {
 		Echo: echo.New(),
 	}
 
-	e.Echo.Pre(middleware.RemoveTrailingSlash())
+    // 这里没有用 middleware.RemoveTrailingSlash() 是因为它会修改 req.RequestURI, 而我不希望被修改
+	e.Echo.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			req := c.Request()
+			url := req.URL
+			path := url.Path
+			l := len(path) - 1
+			if l > 0 && strings.HasSuffix(path, "/") {
+
+				// // Redirect
+				// if config.RedirectCode != 0 {
+				// 	uri := req.RequestURI
+				// 	questIdx := strings.IndexByte(uri, '?')
+				// 	if questIdx > 0 && path[questIdx - 1] == '/' {
+				// 		uri = req.RequestURI[:questIdx-1] + req.RequestURI[questIdx:]
+				// 	}
+				// 	return c.Redirect(http.StatusTemporaryRedirect, uri)
+				// }
+
+
+				path = path[:l]
+
+
+				// Forward
+				url.Path = path
+			}
+			return next(c)
+		}
+	})
 	// e.Echo.Pre(middleware.AddTrailingSlash())
 	e.Echo.Pre(middleware.MethodOverrideWithConfig(middleware.MethodOverrideConfig{
 		Getter: func(c echo.Context) string {
