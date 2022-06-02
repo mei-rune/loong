@@ -601,7 +601,7 @@ func New() *Engine {
 					if err == nil {
 						return
 					}
-					if err != ErrNotFound {
+					if err != echo.ErrNotFound {
 						break
 					}
 				}
@@ -609,12 +609,15 @@ func New() *Engine {
 		}
 
 		if e.Logger != nil {
-			if err == ErrNotFound {
+			if err == echo.ErrNotFound {
 				e.Logger.Warn("没有找到请求的处理函数",
 					log.String("method", c.Request().Method),
 					log.String("url", c.Request().RequestURI),
 					log.String("path", c.Request().URL.Path),
 					log.Error(err))
+
+				c.JSON(http.StatusNotFound, e.Echo.Routes())
+				return
 			} else {
 				e.Logger.Warn("处理请求发生错误",
 					log.String("method", c.Request().Method),
@@ -629,8 +632,8 @@ func New() *Engine {
 	docHandler := func(c echo.Context) error {
 		return c.JSON(http.StatusOK, Result{Success: true, Data: e.Echo.Routes()})
 	}
-	doc := e.Echo.Group("/internal").Group("/doc")
-	doc.GET("/", docHandler)
+	doc := e.Echo.Group("/internal").Group("/routeinfo")
+	doc.Any("*", docHandler)
 	doc.GET("", docHandler)
 	return e
 }
