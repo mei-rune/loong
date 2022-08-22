@@ -52,7 +52,7 @@ func (c *Context) ReturnResult(code int, i interface{}) error {
 }
 
 func (c *Context) ReturnCreatedResult(i interface{}) error {
-	return c.ReturnResult(http.StatusCreated, i)
+	return c.ReturnResult(http.StatusOK, i)
 }
 
 func (c *Context) ReturnUpdatedResult(i interface{}) error {
@@ -680,7 +680,10 @@ func New() *Engine {
 					log.String("path", c.Request().URL.Path),
 					log.Error(err))
 
-				c.JSON(http.StatusNotFound, e.Echo.Routes())
+				c.JSON(http.StatusNotFound, &Result{
+					Success: false,
+					Error:   ToApplicationError(errors.New("url '"+c.Request().RequestURI+"' isnot found"), http.StatusNotFound),
+				})
 				return
 			} else {
 				e.Logger.Warn("处理请求发生错误",
