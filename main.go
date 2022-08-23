@@ -22,6 +22,7 @@ var ErrBadArgument = errors.BadArgument
 var WithHTTPCode = errors.WithHTTPCode
 var Wrap = errors.Wrap
 var ToHTTPError = errors.ToApplicationError
+var ToError = errors.ToApplicationError
 
 type Error = errors.Error
 type HTTPError = errors.HTTPError
@@ -682,7 +683,8 @@ func New() *Engine {
 
 				c.JSON(http.StatusNotFound, &Result{
 					Success: false,
-					Error:   ToApplicationError(errors.New("url '"+c.Request().RequestURI+"' isnot found"), http.StatusNotFound),
+					Error:   ToHTTPError(errors.New("url '"+c.Request().RequestURI+"' isnot found"),
+										 http.StatusNotFound),
 				})
 				return
 			} else {
