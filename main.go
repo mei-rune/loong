@@ -53,7 +53,7 @@ func (c *Context) ReturnResult(code int, i interface{}) error {
 }
 
 func (c *Context) ReturnCreatedResult(i interface{}) error {
-	return c.ReturnResult(http.StatusOK, i)
+	return c.ReturnResult(http.StatusCreated, i)
 }
 
 func (c *Context) ReturnUpdatedResult(i interface{}) error {
