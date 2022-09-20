@@ -76,6 +76,53 @@ var (
 	TimeLocation = time.Local
 )
 
+
+func splitDuration(s string, delim string) (string, int, error) {
+	elems := strings.Split(s, delim)
+	if len(elems) == 2 {
+		i64, err := strconv.ParseInt(elems[0], 10, 64)
+		if err != nil {
+			return "", 0, err
+		}
+		return elems[len(elems)-1], int(i64), nil
+	}
+
+	return s, 0, nil
+}
+
+
+// Additional time.Duration constants
+const (
+	Day   = time.Hour * 24
+	// Week  = Day * 7
+	// Month = Day * 30
+	Year  = Day * 365
+)
+
+func ParseDuration(s string) (time.Duration, error) {
+	s, years, err := splitDuration(s, "y")
+	if err != nil {
+		return 0, err
+	}
+	s, days, err := splitDuration(s, "d")
+	if err != nil {
+		return 0, err
+	}
+
+	big := time.Duration(years)*Year +
+		time.Duration(days)*Day
+	if s == "" {
+		return big, nil
+	}
+
+	little, err := time.ParseDuration(s)
+	if err != nil {
+		return 0, err
+	}
+
+	return big + little, nil
+}
+
 func ToDatetime(s string) (time.Time, error) {
 	for _, format := range TimeFormats {
 		t, err := time.ParseInLocation(format, s, TimeLocation)
@@ -83,8 +130,6 @@ func ToDatetime(s string) (time.Time, error) {
 			return t, nil
 		}
 	}
-
-
 
 	if strings.HasPrefix(s, "now()") {
 		s = strings.TrimPrefix(s, "now()")
@@ -100,14 +145,14 @@ func ToDatetime(s string) (time.Time, error) {
 			}
 			s = strings.TrimSpace(s)
 
-			duration, err := time.ParseDuration(s)
-			if err == nil {
-				if hasMinus {
-					return time.Now().Add(-duration), nil
-				} else {
-					return time.Now().Add(duration), nil
-				}
+			duration, err := ParseDuration(s)
+			if err != nil {
+				return time.Time{}, errors.New("'" + s + "' isnot duration")
 			}
+			if hasMinus {
+				return time.Now().Add(-duration), nil
+			}
+			return time.Now().Add(duration), nil
 		}
 	}
 
