@@ -36,8 +36,11 @@ func TestTime(t *testing.T) {
 		}
 	}
 
-
 	for _, test := range [][2]string{
+		[2]string{
+			"now()",
+			time.Now().Format(time.RFC3339),
+		},
 		[2]string{
 			"now()-1h",
 			time.Now().Add(-1* time.Hour).Format(time.RFC3339),
