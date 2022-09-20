@@ -153,6 +153,8 @@ func ToDatetime(s string) (time.Time, error) {
 				return time.Now().Add(-duration), nil
 			}
 			return time.Now().Add(duration), nil
+		} else if s == "" {
+			return time.Now(), nil
 		}
 	}
 
