@@ -71,6 +71,7 @@ var (
 		"2006/1/_2 15:04:05Z07:00",
 		"2006/1/_2 15:04:05",
 		"2006/1/_2",
+		"2006-01-02T15:04:05 07:00",
 	}
 	TimeLocation = time.Local
 )
@@ -80,6 +81,33 @@ func ToDatetime(s string) (time.Time, error) {
 		t, err := time.ParseInLocation(format, s, TimeLocation)
 		if err == nil {
 			return t, nil
+		}
+	}
+
+
+
+	if strings.HasPrefix(s, "now()") {
+		s = strings.TrimPrefix(s, "now()")
+		s = strings.TrimSpace(s)
+
+		if strings.HasPrefix(s, "-") || strings.HasPrefix(s, "+") {
+			hasMinus := true
+			if strings.HasPrefix(s, "+") {
+				hasMinus = false
+				s = strings.TrimPrefix(s, "+")
+			} else {
+				s = strings.TrimPrefix(s, "-")
+			}
+			s = strings.TrimSpace(s)
+
+			duration, err := time.ParseDuration(s)
+			if err == nil {
+				if hasMinus {
+					return time.Now().Add(-duration), nil
+				} else {
+					return time.Now().Add(duration), nil
+				}
+			}
 		}
 	}
 
