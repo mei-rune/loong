@@ -83,7 +83,7 @@ func (c *Context) ReturnQueryResult(i interface{}) error {
 
 		encoder := csvutil.NewEncoder(csvWriter)
 		encoder.Register(marshalTime)
-		encoder.Tag = "json"
+		encoder.Tag = "csv"
 		return encoder.EncodeEx(i)
 	}
 	return c.ReturnResult(http.StatusOK, i)
