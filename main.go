@@ -2,13 +2,17 @@ package loong
 
 import (
 	"context"
+	"encoding/csv"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/runner-mei/csvutil"
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/log"
 	echoSwagger "github.com/swaggo/echo-swagger"
@@ -64,11 +68,38 @@ func (c *Context) ReturnDeletedResult(i interface{}) error {
 	return c.ReturnResult(http.StatusOK, i)
 }
 
+func marshalTime(t time.Time) ([]byte, error) {
+	return t.AppendFormat(nil, "2006-01-02 15:04:05Z07:00"), nil
+}
+
 func (c *Context) ReturnQueryResult(i interface{}) error {
+	format := c.QueryParam("format")
+	if format == "csv" {
+		w := c.Response()
+		w.Header().Set("Content-Type", "application/csv; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		csvWriter := csv.NewWriter(w)
+		defer csvWriter.Flush()
+
+		encoder := csvutil.NewEncoder(csvWriter)
+		encoder.Register(marshalTime)
+		encoder.Tag = "json"
+		return encoder.EncodeEx(i)
+	}
 	return c.ReturnResult(http.StatusOK, i)
 }
 
 func (c *Context) ReturnCountResult(i int64) error {
+	format := c.QueryParam("format")
+	if format == "csv" {
+		w := c.Response()
+		w.Header().Set("Content-Type", "application/csv; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		io.WriteString(w, "count\r\n")
+		_, err := io.WriteString(w, strconv.FormatInt(i, 10))
+		return err
+	}
+
 	return c.ReturnResult(http.StatusOK, i)
 }
 
@@ -534,7 +565,7 @@ func toContext(e *Engine, ctx echo.Context) *Context {
 
 func (engine *Engine) EnalbeSwaggerAt(prefix, instanceName string) {
 	if !strings.HasPrefix(prefix, "/") {
-		prefix = "/" +prefix
+		prefix = "/" + prefix
 	}
 	if strings.HasSuffix(prefix, "/") {
 		prefix = strings.TrimSuffix(prefix, "/")
@@ -543,18 +574,18 @@ func (engine *Engine) EnalbeSwaggerAt(prefix, instanceName string) {
 	handler := echoSwagger.EchoWrapHandler(echoSwagger.InstanceName(instanceName))
 
 	mux := engine.Echo.Group(prefix, func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error{
+		return func(c echo.Context) error {
 			rawRequestURI := c.Request().RequestURI
 			index := strings.Index(rawRequestURI, prefix)
 			if index >= 0 {
 				c.Request().RequestURI = rawRequestURI[index:]
 			}
-			if c.Request().RequestURI == prefix || 
-				c.Request().RequestURI == prefix  + "/" {
+			if c.Request().RequestURI == prefix ||
+				c.Request().RequestURI == prefix+"/" {
 				if strings.HasSuffix(rawRequestURI, "/") {
-					return c.Redirect(http.StatusTemporaryRedirect, rawRequestURI + "index.html")
+					return c.Redirect(http.StatusTemporaryRedirect, rawRequestURI+"index.html")
 				} else {
-					return c.Redirect(http.StatusTemporaryRedirect, rawRequestURI + "/index.html")
+					return c.Redirect(http.StatusTemporaryRedirect, rawRequestURI+"/index.html")
 				}
 			}
 			return next(c)
@@ -568,7 +599,7 @@ func New() *Engine {
 		Echo: echo.New(),
 	}
 
-    // 这里没有用 middleware.RemoveTrailingSlash() 是因为它会修改 req.RequestURI, 而我不希望被修改
+	// 这里没有用 middleware.RemoveTrailingSlash() 是因为它会修改 req.RequestURI, 而我不希望被修改
 	e.Echo.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			req := c.Request()
@@ -587,9 +618,7 @@ func New() *Engine {
 				// 	return c.Redirect(http.StatusTemporaryRedirect, uri)
 				// }
 
-
 				path = path[:l]
-
 
 				// Forward
 				url.Path = path
@@ -683,8 +712,8 @@ func New() *Engine {
 
 				c.JSON(http.StatusNotFound, &Result{
 					Success: false,
-					Error:   ToHTTPError(errors.New("url '"+c.Request().RequestURI+"' isnot found"),
-										 http.StatusNotFound),
+					Error: ToHTTPError(errors.New("url '"+c.Request().RequestURI+"' isnot found"),
+						http.StatusNotFound),
 				})
 				return
 			} else {
