@@ -559,6 +559,8 @@ func toContext(e *Engine, ctx echo.Context) *Context {
 		actx.CtxLogger = e.Logger.With(log.String("http.method", req.Method), log.Stringer("http.url", req.URL))
 		actx.StdContext = log.ContextWithLogger(actx.StdContext, actx.CtxLogger)
 	}
+	actx.StdContext = ContextWithRequest(actx.StdContext, req)
+
 	ctx.Set(MyContextKey, actx)
 	return actx
 }
