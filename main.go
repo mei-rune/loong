@@ -11,8 +11,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/mei-rune/csvutil"
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/runner-mei/csvutil"
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/log"
 	echoSwagger "github.com/swaggo/echo-swagger"
