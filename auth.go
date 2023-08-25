@@ -14,6 +14,8 @@ var (
 	ErrTokenNotFound      = errors.NewHTTPError(http.StatusUnauthorized, "auth: no token found")
 	ErrUserNotFound       = errors.NewHTTPError(http.StatusForbidden, "auth: user isnot exists")
 	ErrInvalidCredentials = errors.NewHTTPError(http.StatusForbidden, "auth: invalid credentials")
+
+	// 仅用于 token 找到，但不适用检验函数的时候
 	ErrSkipped            = errors.NewHTTPError(http.StatusForbidden, "auth: has not check token")
 )
 
@@ -29,7 +31,7 @@ func HTTPAuth(validateFns ...AuthValidateFunc) func(HandlerFunc) HandlerFunc {
 					return next(ctx)
 				}
 
-				if err != ErrTokenNotFound {
+				if !errors.Is(err, ErrTokenNotFound) {
 					return ctx.ReturnError(err, http.StatusUnauthorized)
 				}
 			}

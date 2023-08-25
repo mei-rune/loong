@@ -706,6 +706,10 @@ func New() *Engine {
 
 		if e.Logger != nil {
 			if err == echo.ErrNotFound {
+				// for _, route := range e.Routes() {
+				// 	e.Logger.Info(fmt.Sprintf("%#v", route))
+				// }
+
 				e.Logger.Warn("没有找到请求的处理函数",
 					log.String("method", c.Request().Method),
 					log.String("url", c.Request().RequestURI),
@@ -718,12 +722,18 @@ func New() *Engine {
 						http.StatusNotFound),
 				})
 				return
-			} else {
-				e.Logger.Warn("处理请求发生错误",
+			}
+
+			// if err == echo.ErrMethodNotAllowed {
+			// 	for _, route := range e.Routes() {
+			// 		e.Logger.Info(fmt.Sprintf("%#v", route))
+			// 	}
+			// }
+
+			e.Logger.Warn("处理请求发生错误",
 					log.String("method", c.Request().Method),
 					log.String("url", c.Request().RequestURI),
 					log.Error(err))
-			}
 		}
 
 		e.Echo.DefaultHTTPErrorHandler(err, c)
