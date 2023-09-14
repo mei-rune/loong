@@ -16,7 +16,7 @@ var (
 	ErrInvalidCredentials = errors.NewHTTPError(http.StatusForbidden, "auth: invalid credentials")
 
 	// 仅用于 token 找到，但不适用检验函数的时候
-	ErrSkipped            = errors.NewHTTPError(http.StatusForbidden, "auth: has not check token")
+	ErrSkipped = errors.NewHTTPError(http.StatusForbidden, "auth: has not check token")
 )
 
 type AuthValidateFunc func(ctx context.Context, req *http.Request) (context.Context, error)

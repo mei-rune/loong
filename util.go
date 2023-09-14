@@ -80,7 +80,6 @@ var (
 	TimeLocation = time.Local
 )
 
-
 func splitDuration(s string, delim string) (string, int, error) {
 	elems := strings.Split(s, delim)
 	if len(elems) == 2 {
@@ -94,13 +93,12 @@ func splitDuration(s string, delim string) (string, int, error) {
 	return s, 0, nil
 }
 
-
 // Additional time.Duration constants
 const (
-	Day   = time.Hour * 24
+	Day = time.Hour * 24
 	// Week  = Day * 7
 	// Month = Day * 30
-	Year  = Day * 365
+	Year = Day * 365
 )
 
 func ParseDuration(s string) (time.Duration, error) {

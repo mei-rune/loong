@@ -14,9 +14,9 @@ type TokenCheckFunc func(ctx context.Context, req *http.Request, tokenStr string
 // TokenVerify http middleware handler will verify a Token string from a http request.
 //
 // TokenVerify will search for a token in a http request, in the order:
-//   1. 'token' URI query parameter
-//   2. 'Authorization: BEARER T' request header
-//   3. Cookie 'token' value
+//  1. 'token' URI query parameter
+//  2. 'Authorization: BEARER T' request header
+//  3. Cookie 'token' value
 func TokenVerify(findTokenFns []TokenFindFunc, checkTokenFns []TokenCheckFunc) AuthValidateFunc {
 	return func(ctx context.Context, req *http.Request) (context.Context, error) {
 		var tokenStr string

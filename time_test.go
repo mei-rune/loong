@@ -43,11 +43,11 @@ func TestTime(t *testing.T) {
 		},
 		[2]string{
 			"now()-1h",
-			time.Now().Add(-1* time.Hour).Format(time.RFC3339),
+			time.Now().Add(-1 * time.Hour).Format(time.RFC3339),
 		},
 		[2]string{
 			"now()+1h",
-			time.Now().Add(1* time.Hour).Format(time.RFC3339),
+			time.Now().Add(1 * time.Hour).Format(time.RFC3339),
 		},
 	} {
 		date, err := ToDatetime(test[0])

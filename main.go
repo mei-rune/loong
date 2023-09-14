@@ -731,9 +731,9 @@ func New() *Engine {
 			// }
 
 			e.Logger.Warn("处理请求发生错误",
-					log.String("method", c.Request().Method),
-					log.String("url", c.Request().RequestURI),
-					log.Error(err))
+				log.String("method", c.Request().Method),
+				log.String("url", c.Request().RequestURI),
+				log.Error(err))
 		}
 
 		e.Echo.DefaultHTTPErrorHandler(err, c)
