@@ -23,6 +23,10 @@ func TestTime(t *testing.T) {
 			"2007/01/2",
 			"2007-01-02T00:00:00+08:00",
 		},
+		[2]string{
+			"2023-10-01 00:00:00",
+			"2023-10-01T00:00:00+08:00",
+		},
 	} {
 		date, err := ToDatetime(test[0])
 		if err != nil {

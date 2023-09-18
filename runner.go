@@ -20,6 +20,31 @@ type Hook interface {
 	OnStart(context.Context, *Runner) error
 	OnStop(context.Context, *Runner) error
 }
+type hook struct {
+	onStart func(context.Context, *Runner) error
+	onStop func(context.Context, *Runner) error
+}
+func (h hook) OnStart(ctx context.Context, r *Runner) error {
+	if h.onStart == nil {
+		return nil
+	}
+
+	return h.onStart(ctx, r)
+}
+func (h hook) OnStop(ctx context.Context, r *Runner) error {
+	if h.onStop == nil {
+		return nil
+	}
+
+	return h.onStop(ctx, r)
+}
+
+func MakeHook(onStart, onStop func(context.Context, *Runner) error) Hook {
+	return hook{
+			onStart: onStart,
+			onStop: onStop,
+		}
+}
 
 type Runner struct {
 	Logger          log.Logger

@@ -7,11 +7,10 @@ import (
 	"testing"
 
 	"github.com/runner-mei/log/logtest"
-	"github.com/runner-mei/moo"
 )
 
 func TestRunner(t *testing.T) {
-	r := &moo.Runner{
+	r := &Runner{
 		Logger:             logtest.NewLogger(t),
 		Network:            "http",
 		ListenAt:           ":34456",
