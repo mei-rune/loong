@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/runner-mei/errors"
-	"github.com/runner-mei/ipfilter"
+	"github.com/mei-rune/ipfilter"
 	"github.com/runner-mei/log"
 )
 
