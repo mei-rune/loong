@@ -34,6 +34,5 @@ require (
 )
 
 exclude (
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/swaggo/files v0.0.0-20210815190702-a29dd2bc99b2
 )
