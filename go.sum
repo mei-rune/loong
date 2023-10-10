@@ -88,6 +88,8 @@ github.com/mei-rune/csvutil v0.0.0-20221230090625-d3b9c650225d h1:pv0VYycOuvGL8Z
 github.com/mei-rune/csvutil v0.0.0-20221230090625-d3b9c650225d/go.mod h1:Ymm8K4RjPHCuxxhCPzTTz3VpTo7NTC7dhZ1AvH4jtio=
 github.com/mei-rune/ipfilter v1.0.1 h1:1EmWGI8ZKXqc+Q1JOaiPviIPXm79spScV98Cq4yx2m0=
 github.com/mei-rune/ipfilter v1.0.1/go.mod h1:b1VAiI1MQUwrzBT1HkDEftCKJGKIyXsVJuibJQg1c8E=
+github.com/mei-rune/ipfilter v1.0.2 h1:g4KFW7v5Sj7088QMl4z+5QteCbPpEtGXmLj1XWaSs1M=
+github.com/mei-rune/ipfilter v1.0.2/go.mod h1:b1VAiI1MQUwrzBT1HkDEftCKJGKIyXsVJuibJQg1c8E=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/opentracing/opentracing-go v1.2.0 h1:uEJPy/1a5RIPAJ0Ov+OIO8OxWu77jEv+1B0VhjKrZUs=
 github.com/opentracing/opentracing-go v1.2.0/go.mod h1:GxEUsuufX4nBwe+T+Wl9TAgYrxe9dPLANfrWvHYVTgc=

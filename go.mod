@@ -16,7 +16,7 @@ require (
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/labstack/echo/v4 v4.11.2-0.20230919052447-4bc3e475e313
 	github.com/mei-rune/csvutil v0.0.0-20221230090625-d3b9c650225d
-	github.com/mei-rune/ipfilter v1.0.1 // indirect
+	github.com/mei-rune/ipfilter v1.0.2
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/otiai10/copy v1.7.0 // indirect
 	github.com/runner-mei/errors v0.0.0-20220725054952-d7c9c10762ea
@@ -33,6 +33,4 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 )
 
-exclude (
-	github.com/swaggo/files v0.0.0-20210815190702-a29dd2bc99b2
-)
+exclude github.com/swaggo/files v0.0.0-20210815190702-a29dd2bc99b2
