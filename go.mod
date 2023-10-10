@@ -12,9 +12,9 @@ require (
 	github.com/go-openapi/jsonpointer v0.20.0 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/spec v0.20.9 // indirect
-	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/golang-jwt/jwt/v4 v4.5.1-0.20230219130118-4fd5621d8dd0
 	github.com/golang/mock v1.6.0 // indirect
-	github.com/labstack/echo/v4 v4.11.1
+	github.com/labstack/echo/v4 v4.11.2-0.20230919052447-4bc3e475e313
 	github.com/mei-rune/csvutil v0.0.0-20221230090625-d3b9c650225d
 	github.com/mei-rune/ipfilter v1.0.1 // indirect
 	github.com/opentracing/opentracing-go v1.2.0
@@ -28,6 +28,7 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.25.0
+	golang.org/x/net v0.16.0 // indirect
 	golang.org/x/tools v0.12.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 )
