@@ -250,6 +250,8 @@ type Party interface {
 	// Group creates a new sub-group with prefix and optional sub-group-level middleware.
 	Group(prefix string, middleware ...MiddlewareFunc) Party
 
+	With(middlewares ...MiddlewareFunc) Party
+
 	// Static implements `Echo#Static()` for sub-routes within the Group.
 	Static(prefix, root string)
 
@@ -456,7 +458,7 @@ func (e *Group) convertMiddlewares(middlewares []MiddlewareFunc) []echo.Middlewa
 }
 
 // Use adds middleware to the chain which is run after router.
-func (e *Group) With(middlewares ...MiddlewareFunc) *Group {
+func (e *Group) With(middlewares ...MiddlewareFunc) Party {
 	return &Group{
 		engine: e.engine,
 		group: e.group,
