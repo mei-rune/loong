@@ -417,7 +417,7 @@ func (e *Engine) Static(prefix, root string) {
 
 func (e *Engine) Group(prefix string, m ...MiddlewareFunc) Party {
 	g := e.Echo.Group(prefix, e.convertMiddlewares(m)...)
-	return &Group{e, g}
+	return &Group{engine: e, group: g}
 }
 
 func (e *Engine) NoRoute(prefix string, handler HandlerFunc, m ...MiddlewareFunc) {
@@ -437,6 +437,8 @@ func (e *Engine) NoRouteAny(handler HandlerFunc) {
 type Group struct {
 	engine *Engine
 	group  *echo.Group
+
+	middlewares []echo.MiddlewareFunc
 }
 
 // Use adds middleware to the chain which is run after router.
@@ -444,75 +446,93 @@ func (e *Group) Use(middlewares ...MiddlewareFunc) {
 	e.group.Use(e.engine.convertMiddlewares(middlewares)...)
 }
 
+func (e *Group) convertMiddlewares(middlewares []MiddlewareFunc) []echo.MiddlewareFunc {
+	funcs := make([]echo.MiddlewareFunc, len(e.middlewares), len(e.middlewares) + len(middlewares))
+	copy(funcs, e.middlewares)
+	for idx := range middlewares {
+		funcs = append(funcs, e.engine.convertMiddleware(middlewares[idx]))
+	}
+	return funcs
+}
+
+// Use adds middleware to the chain which is run after router.
+func (e *Group) With(middlewares ...MiddlewareFunc) *Group {
+	return &Group{
+		engine: e.engine,
+		group: e.group,
+		middlewares: e.convertMiddlewares(middlewares),
+	}
+}
+
 // CONNECT registers a new CONNECT route for a path with matching handler in the
 // router with optional route-level middleware.
 func (g *Group) CONNECT(path string, h HandlerFunc, m ...MiddlewareFunc) *Route {
-	return g.group.CONNECT(path, g.engine.convertHandler(h), g.engine.convertMiddlewares(m)...)
+	return g.group.CONNECT(path, g.engine.convertHandler(h), g.convertMiddlewares(m)...)
 }
 
 // DELETE registers a new DELETE route for a path with matching handler in the router
 // with optional route-level middleware.
 func (g *Group) DELETE(path string, h HandlerFunc, m ...MiddlewareFunc) *Route {
-	return g.group.DELETE(path, g.engine.convertHandler(h), g.engine.convertMiddlewares(m)...)
+	return g.group.DELETE(path, g.engine.convertHandler(h), g.convertMiddlewares(m)...)
 }
 
 // GET registers a new GET route for a path with matching handler in the router
 // with optional route-level middleware.
 func (g *Group) GET(path string, h HandlerFunc, m ...MiddlewareFunc) *Route {
-	return g.group.GET(path, g.engine.convertHandler(h), g.engine.convertMiddlewares(m)...)
+	return g.group.GET(path, g.engine.convertHandler(h), g.convertMiddlewares(m)...)
 }
 
 // HEAD registers a new HEAD route for a path with matching handler in the
 // router with optional route-level middleware.
 func (g *Group) HEAD(path string, h HandlerFunc, m ...MiddlewareFunc) *Route {
-	return g.group.HEAD(path, g.engine.convertHandler(h), g.engine.convertMiddlewares(m)...)
+	return g.group.HEAD(path, g.engine.convertHandler(h), g.convertMiddlewares(m)...)
 }
 
 // OPTIONS registers a new OPTIONS route for a path with matching handler in the
 // router with optional route-level middleware.
 func (g *Group) OPTIONS(path string, h HandlerFunc, m ...MiddlewareFunc) *Route {
-	return g.group.OPTIONS(path, g.engine.convertHandler(h), g.engine.convertMiddlewares(m)...)
+	return g.group.OPTIONS(path, g.engine.convertHandler(h), g.convertMiddlewares(m)...)
 }
 
 // PATCH registers a new PATCH route for a path with matching handler in the
 // router with optional route-level middleware.
 func (g *Group) PATCH(path string, h HandlerFunc, m ...MiddlewareFunc) *Route {
-	return g.group.PATCH(path, g.engine.convertHandler(h), g.engine.convertMiddlewares(m)...)
+	return g.group.PATCH(path, g.engine.convertHandler(h), g.convertMiddlewares(m)...)
 }
 
 // POST registers a new POST route for a path with matching handler in the
 // router with optional route-level middleware.
 func (g *Group) POST(path string, h HandlerFunc, m ...MiddlewareFunc) *Route {
-	return g.group.POST(path, g.engine.convertHandler(h), g.engine.convertMiddlewares(m)...)
+	return g.group.POST(path, g.engine.convertHandler(h), g.convertMiddlewares(m)...)
 }
 
 // PUT registers a new PUT route for a path with matching handler in the
 // router with optional route-level middleware.
 func (g *Group) PUT(path string, h HandlerFunc, m ...MiddlewareFunc) *Route {
-	return g.group.PUT(path, g.engine.convertHandler(h), g.engine.convertMiddlewares(m)...)
+	return g.group.PUT(path, g.engine.convertHandler(h), g.convertMiddlewares(m)...)
 }
 
 // TRACE registers a new TRACE route for a path with matching handler in the
 // router with optional route-level middleware.
 func (g *Group) TRACE(path string, h HandlerFunc, m ...MiddlewareFunc) *Route {
-	return g.group.TRACE(path, g.engine.convertHandler(h), g.engine.convertMiddlewares(m)...)
+	return g.group.TRACE(path, g.engine.convertHandler(h), g.convertMiddlewares(m)...)
 }
 
 // Any registers a new route for all HTTP methods and path with matching handler
 // in the router with optional route-level middleware.
 func (g *Group) Any(path string, handler HandlerFunc, m ...MiddlewareFunc) []*Route {
-	return g.group.Any(path, g.engine.convertHandler(handler), g.engine.convertMiddlewares(m)...)
+	return g.group.Any(path, g.engine.convertHandler(handler), g.convertMiddlewares(m)...)
 }
 
 // Add registers a new route for an HTTP method and path with matching handler
 // in the router with optional route-level middleware.
 func (g *Group) Add(method, path string, handler HandlerFunc, m ...MiddlewareFunc) *Route {
-	return g.group.Add(method, path, g.engine.convertHandler(handler), g.engine.convertMiddlewares(m)...)
+	return g.group.Add(method, path, g.engine.convertHandler(handler), g.convertMiddlewares(m)...)
 }
 
 // Match implements `Echo#Match()` for sub-routes within the Group.
 func (g *Group) Match(methods []string, path string, handler HandlerFunc, m ...MiddlewareFunc) []*Route {
-	return g.group.Match(methods, path, g.engine.convertHandler(handler), g.engine.convertMiddlewares(m)...)
+	return g.group.Match(methods, path, g.engine.convertHandler(handler), g.convertMiddlewares(m)...)
 }
 
 // File registers a new route with path to serve a static file with optional route-level middleware.
@@ -526,8 +546,8 @@ func (g *Group) Static(prefix, root string) {
 }
 
 func (g *Group) Group(prefix string, m ...MiddlewareFunc) Party {
-	sg := g.group.Group(prefix, g.engine.convertMiddlewares(m)...)
-	return &Group{g.engine, sg}
+	sg := g.group.Group(prefix, g.convertMiddlewares(m)...)
+	return &Group{engine: g.engine, group: sg}
 }
 
 func (engine *Engine) SetTracing(tracer opentracing.Tracer, componentName string, traceAll bool) *Engine {
