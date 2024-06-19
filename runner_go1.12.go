@@ -10,5 +10,5 @@ import (
 )
 
 func (r *Runner) enableTlcp(listener net.Listener) (net.Listener, error) {
-	return nil, errors.Wrap(err, "本版本不支持国密 tlcp")
+	return nil, errors.New("本版本不支持国密 tlcp")
 }
