@@ -457,7 +457,7 @@ func (g *Group) Use(middlewares ...MiddlewareFunc) {
 }
 
 func (g *Group) convertMiddlewares(middlewares []MiddlewareFunc) []echo.MiddlewareFunc {
-	funcs := make([]echo.MiddlewareFunc, len(g.middlewares), len(g.middlewares) + len(middlewares))
+	funcs := make([]echo.MiddlewareFunc, len(g.middlewares), len(g.middlewares)+len(middlewares))
 	copy(funcs, g.middlewares)
 	for idx := range middlewares {
 		funcs = append(funcs, g.engine.convertMiddleware(middlewares[idx]))
@@ -468,8 +468,8 @@ func (g *Group) convertMiddlewares(middlewares []MiddlewareFunc) []echo.Middlewa
 // Use adds middleware to the chain which is run after router.
 func (g *Group) With(middlewares ...MiddlewareFunc) Party {
 	return &Group{
-		engine: g.engine,
-		group: g.group,
+		engine:      g.engine,
+		group:       g.group,
 		middlewares: g.convertMiddlewares(middlewares),
 	}
 }

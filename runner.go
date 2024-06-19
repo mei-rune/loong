@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/runner-mei/errors"
 	"github.com/mei-rune/ipfilter"
+	"github.com/runner-mei/errors"
 	"github.com/runner-mei/log"
 )
 
@@ -22,8 +22,9 @@ type Hook interface {
 }
 type hook struct {
 	onStart func(context.Context, *Runner) error
-	onStop func(context.Context, *Runner) error
+	onStop  func(context.Context, *Runner) error
 }
+
 func (h hook) OnStart(ctx context.Context, r *Runner) error {
 	if h.onStart == nil {
 		return nil
@@ -41,9 +42,9 @@ func (h hook) OnStop(ctx context.Context, r *Runner) error {
 
 func MakeHook(onStart, onStop func(context.Context, *Runner) error) Hook {
 	return hook{
-			onStart: onStart,
-			onStop: onStop,
-		}
+		onStart: onStart,
+		onStop:  onStop,
+	}
 }
 
 type Runner struct {
@@ -54,6 +55,13 @@ type Runner struct {
 
 	KeyFile  string
 	CertFile string
+
+	TLCP struct {
+		SigCertFile string
+		SigKeyFile  string
+		EncCertFile string
+		EncKeyFile  string
+	}
 
 	CandidatePortStart int
 	CandidatePortEnd   int
@@ -97,7 +105,7 @@ func (r *Runner) URL(address ...string) (string, error) {
 	switch strings.ToLower(network) {
 	case "http", "tcp":
 		network = "http"
-	case "https", "tls", "ssl":
+	case "https", "tls", "ssl", "tlcp":
 		network = "https"
 	default:
 		return "", errors.New("network '" + network + "' is unsupported")
@@ -160,6 +168,7 @@ func (r *Runner) start(ctx context.Context, handler http.Handler, stopped chan s
 	}
 	network := r.Network
 	isHTTPs := false
+	isTLCP := false
 
 	switch strings.ToLower(network) {
 	case "http", "tcp":
@@ -169,6 +178,16 @@ func (r *Runner) start(ctx context.Context, handler http.Handler, stopped chan s
 		network = "tcp"
 		if r.CertFile == "" || r.KeyFile == "" {
 			return errors.New("keyFile or certFile is missing")
+		}
+	case "tlcp":
+		isTLCP = true
+		isHTTPs = true
+		network = "tcp"
+		if r.TLCP.SigCertFile == "" || r.TLCP.SigKeyFile == "" {
+			return errors.New("sig keyFile or certFile is missing")
+		}
+		if r.TLCP.EncCertFile == "" || r.TLCP.EncKeyFile == "" {
+			return errors.New("enc keyFile or certFile is missing")
 		}
 	default:
 		return errors.New("listen: network '" + network + "' is unsupported")
@@ -236,7 +255,15 @@ func (r *Runner) start(ctx context.Context, handler http.Handler, stopped chan s
 		}
 
 		var err error
-		if isHTTPs {
+		if isTLCP {
+			listener, err = r.enableTlcp(listener)
+			if err != nil {
+				r.Logger.Error("enable tlcp unsuccessful", log.Error(err))
+				err = errors.Wrap(err, "enable tlcp unsuccessful")
+			} else {
+				err = srv.Serve(listener)
+			}
+		} else if isHTTPs {
 			err = srv.ServeTLS(listener, r.CertFile, r.KeyFile)
 		} else {
 			err = srv.Serve(listener)
