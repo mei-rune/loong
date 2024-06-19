@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	emperror.dev/emperror v0.33.0 // indirect
+	gitee.com/Trisia/gotlcp v1.3.21 // indirect
 	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
 	github.com/PuerkitoBio/purell v1.2.0 // indirect
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
@@ -28,8 +29,6 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.25.0
-	golang.org/x/net v0.16.0 // indirect
-	golang.org/x/tools v0.12.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 )
 
