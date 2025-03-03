@@ -1,6 +1,6 @@
 module github.com/runner-mei/loong
 
-go 1.13
+go 1.20
 
 require (
 	gitee.com/Trisia/gotlcp v1.3.21
@@ -18,7 +18,7 @@ require (
 	github.com/mei-rune/ipfilter v1.0.2
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/runner-mei/errors v0.0.0-20220725054952-d7c9c10762ea
-	github.com/runner-mei/log v1.0.10
+	github.com/runner-mei/log v1.0.11
 	github.com/swaggo/echo-swagger v1.4.0
 	github.com/swaggo/swag v1.16.1 // indirect
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
@@ -30,3 +30,5 @@ require (
 )
 
 exclude github.com/swaggo/files v0.0.0-20210815190702-a29dd2bc99b2
+
+replace golang.org/x/exp => github.com/mei-rune/golang_exp_for_go120 v0.0.0-20250303053821-1e7433e4f2f2
