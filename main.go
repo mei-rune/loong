@@ -865,3 +865,5 @@ func WrapContextHandler(handler ContextHandlerFunc) HandlerFunc {
 type ContextHandler interface {
 	ServeHTTP(ctx context.Context, w http.ResponseWriter, r *http.Request)
 }
+
+type MiddlewareContextHandlerFunc func(ContextHandlerFunc) ContextHandlerFunc
