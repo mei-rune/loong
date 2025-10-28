@@ -250,7 +250,11 @@ func (r *Runner) start(ctx context.Context, handler http.Handler, stopped chan s
 
 		if !r.IPFilterOptions.TrustProxy {
 			listener = ipfilter.WrapListener(listener, r.IPFilterOptions, func(addr net.Addr) {
-				r.Logger.Info("ip is blocked", log.Stringer("addr", addr))
+				if r.IPFilterOptions.Logger != nil {
+					r.IPFilterOptions.Logger.Printf("ip is blocked: addr = %s", addr)
+				} else {
+					r.Logger.Info("ip is blocked", log.Stringer("addr", addr))
+				}
 			})
 		}
 
