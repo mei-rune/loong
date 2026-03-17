@@ -15,7 +15,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/log"
-	echoSwagger "github.com/swaggo/echo-swagger"
+	echoSwagger "github.com/swaggo/echo-swagger/v4"
 )
 
 const MyContextKey = "my-context-key"
