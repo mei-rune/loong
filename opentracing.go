@@ -6,10 +6,9 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/runner-mei/log"
 )
 
-func Tracing(tracer opentracing.Tracer, comp string, traceAll bool) MiddlewareFunc {
+func TracingOpenTracing(tracer opentracing.Tracer, comp string, traceAll bool) MiddlewareFunc {
 	if tracer == nil {
 		tracer = opentracing.GlobalTracer()
 	}
@@ -42,10 +41,10 @@ func Tracing(tracer opentracing.Tracer, comp string, traceAll bool) MiddlewareFu
 			ext.HTTPUrl.Set(span, c.Request().Host+c.Request().RequestURI)
 			ext.HTTPMethod.Set(span, c.Request().Method)
 
-			if c.CtxLogger != nil {
-				c.CtxLogger = c.CtxLogger.WithTargets(log.OutputToTracer(log.DefaultSpanLevel, span))
-				c.StdContext = log.ContextWithLogger(c.StdContext, c.CtxLogger)
-			}
+			// if c.CtxLogger != nil {
+			// 	c.CtxLogger = c.CtxLogger.WithTargets(log.OutputToTracer(log.DefaultSpanLevel, span))
+			// 	c.StdContext = log.ContextWithLogger(c.StdContext, c.CtxLogger)
+			// }
 
 			err = next(c)
 			if err != nil {
@@ -60,7 +59,7 @@ func Tracing(tracer opentracing.Tracer, comp string, traceAll bool) MiddlewareFu
 	}
 }
 
-func RawTracing(tracer opentracing.Tracer, comp string, traceAll bool) func(ContextHandlerFunc) ContextHandlerFunc {
+func RawTracingOpenTracing(tracer opentracing.Tracer, comp string, traceAll bool) func(ContextHandlerFunc) ContextHandlerFunc {
 	if tracer == nil {
 		tracer = opentracing.GlobalTracer()
 	}

@@ -9,7 +9,7 @@ import (
 
 	"github.com/mei-rune/ipfilter"
 	"github.com/runner-mei/errors"
-	"github.com/runner-mei/log"
+	"tech.hengwei.com.cn/go/log"
 )
 
 var ErrServerInitializing = errors.New("service initializing")

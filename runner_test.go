@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/runner-mei/log/logtest"
+	"tech.hengwei.com.cn/go/log/logtest"
 )
 
 func TestRunner(t *testing.T) {

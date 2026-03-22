@@ -14,8 +14,14 @@ import (
 	"github.com/mei-rune/csvutil"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/runner-mei/errors"
+<<<<<<< HEAD
 	"github.com/runner-mei/log"
 	echoSwagger "github.com/swaggo/echo-swagger/v4"
+=======
+	"tech.hengwei.com.cn/go/log"
+	echoSwagger "github.com/swaggo/echo-swagger"
+	"go.opentelemetry.io/otel/trace"
+>>>>>>> ee8fd99208dfad23f2cc0d0b00ddda51bccaf654
 )
 
 const MyContextKey = "my-context-key"
@@ -621,10 +627,22 @@ func (g *Group) Group(prefix string, m ...MiddlewareFunc) Party {
 	}
 }
 
-func (engine *Engine) SetTracing(tracer opentracing.Tracer, componentName string, traceAll bool) *Engine {
+func (engine *Engine) SetTracingOpenTracing(tracer opentracing.Tracer, componentName string, traceAll bool) *Engine {
+	engine.Pre(TracingOpenTracing(tracer, componentName, traceAll))
+	return engine
+}
+
+func (engine *Engine) SetTracing(tracer trace.Tracer, componentName string, traceAll bool) *Engine {
 	engine.Pre(Tracing(tracer, componentName, traceAll))
 	return engine
 }
+
+// func (engine *Engine) UseOTel(m ...otelecho.MiddlewareFunc) *Engine {
+// 	for _, middleware := range m {
+// 		engine.Echo.Use(middleware)
+// 	}
+// 	return engine
+// }
 
 func (engine *Engine) Routes() []*echo.Route {
 	return engine.Echo.Routes()
